@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Unit tests
+        run: go test ./... -count=1 -timeout 120s
+
+      - name: Build
+        run: go build ./...
+
+  docs-check:
+    name: Docs drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install tfplugindocs
+        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
+
+      - name: Generate docs
+        run: tfplugindocs generate --provider-name steadycron
+
+      - name: Check for uncommitted doc changes
+        run: |
+          if ! git diff --exit-code docs/; then
+            echo "::error::Committed docs are out of date. Run 'make docs' locally and commit the result."
+            exit 1
+          fi
+
+  acceptance-tests:
+    name: Acceptance tests
+    runs-on: ubuntu-latest
+    # Only run on pushes to main (not on PR from forks — would expose secrets)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      TF_ACC: "1"
+      STEADYCRON_API_KEY: ${{ secrets.STEADYCRON_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Acceptance tests
+        run: go test ./internal/provider/... -v -count=1 -timeout 120m
+        # Tests auto-skip when STEADYCRON_API_KEY is absent.
