@@ -422,7 +422,7 @@ func httpJobResponseToModel(ctx context.Context, job *client.JobResponse, m *htt
 	// Tags
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {
-		tagElems[i] = types.StringValue(t)
+		tagElems[i] = types.StringValue(t.ID)
 	}
 	tagsVal, d := types.SetValue(types.StringType, tagElems)
 	diags.Append(d...)

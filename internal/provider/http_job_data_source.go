@@ -158,7 +158,7 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {
-		tagElems[i] = types.StringValue(t)
+		tagElems[i] = types.StringValue(t.ID)
 	}
 	tv, d2 := types.SetValue(types.StringType, tagElems)
 	resp.Diagnostics.Append(d2...)

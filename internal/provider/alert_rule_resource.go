@@ -138,7 +138,7 @@ func (r *AlertRuleResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	rule, err := r.client.CreateAlertRule(ctx, ruleModelToRequest(plan))
+	rule, err := r.client.CreateAlertRule(ctx, plan.JobID.ValueString(), ruleModelToRequest(plan))
 	if err != nil {
 		appendAPIError(&resp.Diagnostics, "creating alert rule", err)
 		return
@@ -242,21 +242,22 @@ func validateAlertRule(m alertRuleModel) error {
 
 func ruleModelToRequest(m alertRuleModel) client.UpsertAlertRuleRequest {
 	req := client.UpsertAlertRuleRequest{
-		JobID:     m.JobID.ValueString(),
 		ChannelID: m.ChannelID.ValueString(),
 		Trigger:   m.Trigger.ValueString(),
 		Severity:  m.Severity.ValueString(),
-	}
-	if !m.Threshold.IsNull() && !m.Threshold.IsUnknown() {
-		v := m.Threshold.ValueInt64()
-		req.Threshold = &v
 	}
 	if !m.DedupWindowSeconds.IsNull() {
 		v := m.DedupWindowSeconds.ValueInt64()
 		req.DedupWindowSeconds = &v
 	}
-	if !m.ParamFactor.IsNull() || !m.ParamMinSamples.IsNull() {
+
+	// Threshold, factor, and min_baseline_samples all go in the Params object.
+	if !m.Threshold.IsNull() || !m.ParamFactor.IsNull() || !m.ParamMinSamples.IsNull() {
 		params := &client.Params{}
+		if !m.Threshold.IsNull() && !m.Threshold.IsUnknown() {
+			v := m.Threshold.ValueInt64()
+			params.Threshold = &v
+		}
 		if !m.ParamFactor.IsNull() {
 			v := m.ParamFactor.ValueFloat64()
 			params.Factor = &v
@@ -279,13 +280,12 @@ func ruleResponseToModel(rule *client.AlertRuleResponse, m *alertRuleModel) {
 	m.DedupWindowSeconds = types.Int64Value(rule.DedupWindowSeconds)
 	m.CreatedAt = types.StringValue(rule.CreatedAt)
 
-	if rule.Threshold != nil {
-		m.Threshold = types.Int64Value(*rule.Threshold)
-	} else {
-		m.Threshold = types.Int64Null()
-	}
-
 	if rule.Params != nil {
+		if rule.Params.Threshold != nil {
+			m.Threshold = types.Int64Value(*rule.Params.Threshold)
+		} else {
+			m.Threshold = types.Int64Null()
+		}
 		if rule.Params.Factor != nil {
 			m.ParamFactor = types.Float64Value(*rule.Params.Factor)
 		} else {
@@ -297,6 +297,7 @@ func ruleResponseToModel(rule *client.AlertRuleResponse, m *alertRuleModel) {
 			m.ParamMinSamples = types.Int64Null()
 		}
 	} else {
+		m.Threshold = types.Int64Null()
 		m.ParamFactor = types.Float64Null()
 		m.ParamMinSamples = types.Int64Null()
 	}

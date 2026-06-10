@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -30,13 +29,13 @@ func (d *AlertChannelDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 		MarkdownDescription: "Fetches a SteadyCron alert channel by its server-assigned `id`.\n\n" +
 			"**Note:** secret fields (webhook URLs, bot tokens) are redacted by the API and will be null in the result.",
 		Attributes: map[string]schema.Attribute{
-			"id":         schema.StringAttribute{Required: true},
-			"name":       schema.StringAttribute{Computed: true},
-			"kind":       schema.StringAttribute{Computed: true},
-			"email_to":   schema.StringAttribute{Computed: true},
-			"webhook_url": schema.StringAttribute{Computed: true},
+			"id":               schema.StringAttribute{Required: true},
+			"name":             schema.StringAttribute{Computed: true},
+			"kind":             schema.StringAttribute{Computed: true},
+			"email_to":         schema.StringAttribute{Computed: true},
+			"webhook_url":      schema.StringAttribute{Computed: true},
 			"telegram_chat_id": schema.StringAttribute{Computed: true},
-			"created_at": schema.StringAttribute{Computed: true},
+			"created_at":       schema.StringAttribute{Computed: true},
 		},
 	}
 }
@@ -55,13 +54,13 @@ func (d *AlertChannelDataSource) Configure(_ context.Context, req datasource.Con
 
 func (d *AlertChannelDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
-		ID              types.String `tfsdk:"id"`
-		Name            types.String `tfsdk:"name"`
-		Kind            types.String `tfsdk:"kind"`
-		EmailTo         types.String `tfsdk:"email_to"`
-		WebhookURL      types.String `tfsdk:"webhook_url"`
-		TelegramChatID  types.String `tfsdk:"telegram_chat_id"`
-		CreatedAt       types.String `tfsdk:"created_at"`
+		ID             types.String `tfsdk:"id"`
+		Name           types.String `tfsdk:"name"`
+		Kind           types.String `tfsdk:"kind"`
+		EmailTo        types.String `tfsdk:"email_to"`
+		WebhookURL     types.String `tfsdk:"webhook_url"`
+		TelegramChatID types.String `tfsdk:"telegram_chat_id"`
+		CreatedAt      types.String `tfsdk:"created_at"`
 	}
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -82,21 +81,20 @@ func (d *AlertChannelDataSource) Read(ctx context.Context, req datasource.ReadRe
 	config.Kind = types.StringValue(ch.Kind)
 	config.CreatedAt = types.StringValue(ch.CreatedAt)
 
-	switch ch.Kind {
-	case "email":
-		var cfg client.EmailConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			config.EmailTo = types.StringValue(cfg.To)
-		}
-	case "webhook":
-		var cfg client.WebhookConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			config.WebhookURL = types.StringValue(cfg.URL)
-		}
-	case "telegram":
-		var cfg client.TelegramConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			config.TelegramChatID = types.StringValue(cfg.ChatID)
+	if ch.Config != nil {
+		switch ch.Kind {
+		case "email":
+			if v, ok := ch.Config["to"]; ok {
+				config.EmailTo = types.StringValue(v)
+			}
+		case "webhook":
+			if v, ok := ch.Config["url"]; ok {
+				config.WebhookURL = types.StringValue(v)
+			}
+		case "telegram":
+			if v, ok := ch.Config["chat_id"]; ok {
+				config.TelegramChatID = types.StringValue(v)
+			}
 		}
 	}
 

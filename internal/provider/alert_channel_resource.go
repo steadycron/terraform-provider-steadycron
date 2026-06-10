@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -269,31 +268,31 @@ func channelModelToRequest(m alertChannelModel) (client.UpsertAlertChannelReques
 		Kind: kind,
 	}
 
-	var cfg any
 	switch kind {
 	case "email":
 		if m.EmailTo.IsNull() || m.EmailTo.ValueString() == "" {
 			return req, fmt.Errorf("email_to is required when kind = \"email\"")
 		}
-		cfg = client.EmailConfig{To: m.EmailTo.ValueString()}
+		req.Config = map[string]string{"to": m.EmailTo.ValueString()}
 	case "slack":
 		if m.SlackWebhookURL.IsNull() || m.SlackWebhookURL.ValueString() == "" {
 			return req, fmt.Errorf("slack_webhook_url is required when kind = \"slack\"")
 		}
-		cfg = client.SlackConfig{WebhookURL: m.SlackWebhookURL.ValueString()}
+		req.Config = map[string]string{"webhook_url": m.SlackWebhookURL.ValueString()}
 	case "discord":
 		if m.DiscordWebhookURL.IsNull() || m.DiscordWebhookURL.ValueString() == "" {
 			return req, fmt.Errorf("discord_webhook_url is required when kind = \"discord\"")
 		}
-		cfg = client.DiscordConfig{WebhookURL: m.DiscordWebhookURL.ValueString()}
+		req.Config = map[string]string{"webhook_url": m.DiscordWebhookURL.ValueString()}
 	case "webhook":
 		if m.WebhookURL.IsNull() || m.WebhookURL.ValueString() == "" {
 			return req, fmt.Errorf("webhook_url is required when kind = \"webhook\"")
 		}
-		cfg = client.WebhookConfig{
-			URL:    m.WebhookURL.ValueString(),
-			Secret: m.WebhookSecret.ValueString(),
+		cfg := map[string]string{"url": m.WebhookURL.ValueString()}
+		if !m.WebhookSecret.IsNull() && m.WebhookSecret.ValueString() != "" {
+			cfg["secret"] = m.WebhookSecret.ValueString()
 		}
+		req.Config = cfg
 	case "telegram":
 		if m.TelegramBotToken.IsNull() || m.TelegramBotToken.ValueString() == "" {
 			return req, fmt.Errorf("telegram_bot_token is required when kind = \"telegram\"")
@@ -301,19 +300,14 @@ func channelModelToRequest(m alertChannelModel) (client.UpsertAlertChannelReques
 		if m.TelegramChatID.IsNull() || m.TelegramChatID.ValueString() == "" {
 			return req, fmt.Errorf("telegram_chat_id is required when kind = \"telegram\"")
 		}
-		cfg = client.TelegramConfig{
-			BotToken: m.TelegramBotToken.ValueString(),
-			ChatID:   m.TelegramChatID.ValueString(),
+		req.Config = map[string]string{
+			"bot_token": m.TelegramBotToken.ValueString(),
+			"chat_id":   m.TelegramChatID.ValueString(),
 		}
 	default:
 		return req, fmt.Errorf("unknown kind %q", kind)
 	}
 
-	b, err := json.Marshal(cfg)
-	if err != nil {
-		return req, fmt.Errorf("marshaling config: %w", err)
-	}
-	req.Config = b
 	return req, nil
 }
 
@@ -324,25 +318,22 @@ func channelResponseToModel(ch *client.AlertChannelResponse, m *alertChannelMode
 	m.CreatedAt = types.StringValue(ch.CreatedAt)
 
 	// Parse config — non-secret fields are populated; secrets stay null if redacted.
-	switch ch.Kind {
-	case "email":
-		var cfg client.EmailConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			m.EmailTo = types.StringValue(cfg.To)
+	if ch.Config != nil {
+		switch ch.Kind {
+		case "email":
+			if v, ok := ch.Config["to"]; ok {
+				m.EmailTo = types.StringValue(v)
+			}
+		case "webhook":
+			if v, ok := ch.Config["url"]; ok {
+				m.WebhookURL = types.StringValue(v)
+			}
+		case "telegram":
+			if v, ok := ch.Config["chat_id"]; ok {
+				m.TelegramChatID = types.StringValue(v)
+			}
+		// slack and discord: webhook_url is the only field and it's redacted — nothing to populate.
 		}
-	case "webhook":
-		var cfg client.WebhookConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			m.WebhookURL = types.StringValue(cfg.URL)
-			// secret is redacted — keep current state value (handled by restoreSecrets)
-		}
-	case "telegram":
-		var cfg client.TelegramConfig
-		if json.Unmarshal(ch.Config, &cfg) == nil {
-			m.TelegramChatID = types.StringValue(cfg.ChatID)
-			// bot_token is redacted
-		}
-	// slack and discord: webhook_url is the only field and it's redacted — nothing to populate.
 	}
 }
 

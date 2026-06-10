@@ -176,17 +176,31 @@ func (c *Client) DeleteJob(ctx context.Context, id string) error {
 
 // ─── Tags ────────────────────────────────────────────────────────────────────
 
+func (c *Client) ListTags(ctx context.Context) ([]TagResponse, error) {
+	var out []TagResponse
+	if err := c.do(ctx, http.MethodGet, "/api/tags", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetTag fetches a single tag by ID using the list endpoint (no GET-by-ID endpoint exists).
+func (c *Client) GetTag(ctx context.Context, id string) (*TagResponse, error) {
+	tags, err := c.ListTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range tags {
+		if tags[i].ID == id {
+			return &tags[i], nil
+		}
+	}
+	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "tag not found"}
+}
+
 func (c *Client) CreateTag(ctx context.Context, req UpsertTagRequest) (*TagResponse, error) {
 	var out TagResponse
 	if err := c.do(ctx, http.MethodPost, "/api/tags", req, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-func (c *Client) GetTag(ctx context.Context, id string) (*TagResponse, error) {
-	var out TagResponse
-	if err := c.do(ctx, http.MethodGet, "/api/tags/"+id, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -206,17 +220,31 @@ func (c *Client) DeleteTag(ctx context.Context, id string) error {
 
 // ─── Alert Channels ──────────────────────────────────────────────────────────
 
+func (c *Client) ListAlertChannels(ctx context.Context) ([]AlertChannelResponse, error) {
+	var out []AlertChannelResponse
+	if err := c.do(ctx, http.MethodGet, "/api/alert-channels", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetAlertChannel fetches a single channel by ID using the list endpoint (no GET-by-ID endpoint exists).
+func (c *Client) GetAlertChannel(ctx context.Context, id string) (*AlertChannelResponse, error) {
+	channels, err := c.ListAlertChannels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range channels {
+		if channels[i].ID == id {
+			return &channels[i], nil
+		}
+	}
+	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "alert channel not found"}
+}
+
 func (c *Client) CreateAlertChannel(ctx context.Context, req UpsertAlertChannelRequest) (*AlertChannelResponse, error) {
 	var out AlertChannelResponse
 	if err := c.do(ctx, http.MethodPost, "/api/alert-channels", req, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-func (c *Client) GetAlertChannel(ctx context.Context, id string) (*AlertChannelResponse, error) {
-	var out AlertChannelResponse
-	if err := c.do(ctx, http.MethodGet, "/api/alert-channels/"+id, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -236,9 +264,10 @@ func (c *Client) DeleteAlertChannel(ctx context.Context, id string) error {
 
 // ─── Alert Rules ─────────────────────────────────────────────────────────────
 
-func (c *Client) CreateAlertRule(ctx context.Context, req UpsertAlertRuleRequest) (*AlertRuleResponse, error) {
+// CreateAlertRule creates an alert rule nested under the given job.
+func (c *Client) CreateAlertRule(ctx context.Context, jobID string, req UpsertAlertRuleRequest) (*AlertRuleResponse, error) {
 	var out AlertRuleResponse
-	if err := c.do(ctx, http.MethodPost, "/api/alert-rules", req, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/api/jobs/"+jobID+"/alert-rules", req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -266,17 +295,31 @@ func (c *Client) DeleteAlertRule(ctx context.Context, id string) error {
 
 // ─── Template Variables ──────────────────────────────────────────────────────
 
-func (c *Client) CreateTemplateVariable(ctx context.Context, req UpsertTemplateVariableRequest) (*TemplateVariableResponse, error) {
-	var out TemplateVariableResponse
-	if err := c.do(ctx, http.MethodPost, "/api/template-variables", req, &out); err != nil {
+func (c *Client) ListTemplateVariables(ctx context.Context) ([]TemplateVariableResponse, error) {
+	var out []TemplateVariableResponse
+	if err := c.do(ctx, http.MethodGet, "/api/variables", nil, &out); err != nil {
 		return nil, err
 	}
-	return &out, nil
+	return out, nil
 }
 
+// GetTemplateVariable fetches a single variable by ID using the list endpoint.
 func (c *Client) GetTemplateVariable(ctx context.Context, id string) (*TemplateVariableResponse, error) {
+	vars, err := c.ListTemplateVariables(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range vars {
+		if vars[i].ID == id {
+			return &vars[i], nil
+		}
+	}
+	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "template variable not found"}
+}
+
+func (c *Client) CreateTemplateVariable(ctx context.Context, req UpsertTemplateVariableRequest) (*TemplateVariableResponse, error) {
 	var out TemplateVariableResponse
-	if err := c.do(ctx, http.MethodGet, "/api/template-variables/"+id, nil, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/api/variables", req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -284,14 +327,14 @@ func (c *Client) GetTemplateVariable(ctx context.Context, id string) (*TemplateV
 
 func (c *Client) UpdateTemplateVariable(ctx context.Context, id string, req UpsertTemplateVariableRequest) (*TemplateVariableResponse, error) {
 	var out TemplateVariableResponse
-	if err := c.do(ctx, http.MethodPatch, "/api/template-variables/"+id, req, &out); err != nil {
+	if err := c.do(ctx, http.MethodPatch, "/api/variables/"+id, req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
 func (c *Client) DeleteTemplateVariable(ctx context.Context, id string) error {
-	return c.do(ctx, http.MethodDelete, "/api/template-variables/"+id, nil, nil)
+	return c.do(ctx, http.MethodDelete, "/api/variables/"+id, nil, nil)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

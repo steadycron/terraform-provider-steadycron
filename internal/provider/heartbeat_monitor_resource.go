@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -42,14 +43,11 @@ type heartbeatMonitorModel struct {
 	MaxRunDurationSeconds types.Int64  `tfsdk:"max_run_duration_seconds"`
 	Tags                  types.Set    `tfsdk:"tags"`
 	// Computed
-	PingURL       types.String `tfsdk:"ping_url"`
-	Token         types.String `tfsdk:"token"`
-	Status        types.String `tfsdk:"status"`
-	LastSuccessAt types.String `tfsdk:"last_success_at"`
-	LastStartAt   types.String `tfsdk:"last_start_at"`
-	LastFailAt    types.String `tfsdk:"last_fail_at"`
-	CreatedAt     types.String `tfsdk:"created_at"`
-	UpdatedAt     types.String `tfsdk:"updated_at"`
+	PingURL   types.String `tfsdk:"ping_url"`
+	Token     types.String `tfsdk:"token"`
+	Status    types.String `tfsdk:"status"`
+	CreatedAt types.String `tfsdk:"created_at"`
+	UpdatedAt types.String `tfsdk:"updated_at"`
 }
 
 func (r *HeartbeatMonitorResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -134,18 +132,6 @@ func (r *HeartbeatMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 				Computed:            true,
 				MarkdownDescription: "Derived current status.",
 			},
-			"last_success_at": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "RFC3339 timestamp of the last successful ping.",
-			},
-			"last_start_at": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "RFC3339 timestamp of the last `/start` ping.",
-			},
-			"last_fail_at": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "RFC3339 timestamp of the last `/fail` ping.",
-			},
 			"created_at": schema.StringAttribute{
 				Computed:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -195,8 +181,8 @@ func (r *HeartbeatMonitorResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// The Create response may omit ping_url/token; fetch the full resource via GET.
-	if job.PingURL == "" {
+	// The Create response may omit ping_url; fetch the full resource via GET.
+	if job.PingUrls == nil || job.PingUrls.Success == "" {
 		job, err = r.client.GetJob(ctx, job.ID)
 		if err != nil {
 			appendAPIError(&resp.Diagnostics, "reading heartbeat monitor after create", err)
@@ -382,32 +368,33 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 		m.CronExpression = types.StringNull()
 	}
 
-	// Always set to a known value. GET responses may redact these fields (returning "");
-	// Read/Update callers preserve the prior state value in that case.
-	m.PingURL = types.StringValue(job.PingURL)
-	m.Token = types.StringValue(job.Token)
+	// Extract ping_url and token from the nested PingUrls object.
+	// Read/Update callers preserve prior state values when the API redacts them on GET.
+	if job.PingUrls != nil && job.PingUrls.Success != "" {
+		m.PingURL = types.StringValue(job.PingUrls.Success)
+		// Derive the raw token from the last path segment of the success URL.
+		u := strings.TrimRight(job.PingUrls.Success, "/")
+		if i := strings.LastIndex(u, "/"); i >= 0 {
+			m.Token = types.StringValue(u[i+1:])
+		} else {
+			m.Token = types.StringValue(u)
+		}
+	} else {
+		m.PingURL = types.StringValue("")
+		m.Token = types.StringValue("")
+	}
 
 	m.Status = types.StringPointerValue(job.Status)
-	m.LastSuccessAt = nullableString(job.LastSuccessAt)
-	m.LastStartAt = nullableString(job.LastStartAt)
-	m.LastFailAt = nullableString(job.LastFailAt)
 	m.CreatedAt = types.StringValue(job.CreatedAt)
 	m.UpdatedAt = types.StringValue(job.UpdatedAt)
 
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {
-		tagElems[i] = types.StringValue(t)
+		tagElems[i] = types.StringValue(t.ID)
 	}
 	tagsVal, d := types.SetValue(types.StringType, tagElems)
 	diags.Append(d...)
 	m.Tags = tagsVal
 
 	return diags
-}
-
-func nullableString(s string) types.String {
-	if s == "" {
-		return types.StringNull()
-	}
-	return types.StringValue(s)
 }

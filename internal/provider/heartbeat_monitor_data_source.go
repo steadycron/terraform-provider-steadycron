@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -42,14 +43,11 @@ func (d *HeartbeatMonitorDataSource) Schema(_ context.Context, _ datasource.Sche
 				Computed:    true,
 				ElementType: types.StringType,
 			},
-			"ping_url": schema.StringAttribute{Computed: true, Sensitive: true},
-			"token":    schema.StringAttribute{Computed: true, Sensitive: true},
-			"status":          schema.StringAttribute{Computed: true},
-			"last_success_at": schema.StringAttribute{Computed: true},
-			"last_start_at":   schema.StringAttribute{Computed: true},
-			"last_fail_at":    schema.StringAttribute{Computed: true},
-			"created_at":      schema.StringAttribute{Computed: true},
-			"updated_at":      schema.StringAttribute{Computed: true},
+			"ping_url":   schema.StringAttribute{Computed: true, Sensitive: true},
+			"token":      schema.StringAttribute{Computed: true, Sensitive: true},
+			"status":     schema.StringAttribute{Computed: true},
+			"created_at": schema.StringAttribute{Computed: true},
+			"updated_at": schema.StringAttribute{Computed: true},
 		},
 	}
 }
@@ -81,9 +79,6 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		PingURL               types.String `tfsdk:"ping_url"`
 		Token                 types.String `tfsdk:"token"`
 		Status                types.String `tfsdk:"status"`
-		LastSuccessAt         types.String `tfsdk:"last_success_at"`
-		LastStartAt           types.String `tfsdk:"last_start_at"`
-		LastFailAt            types.String `tfsdk:"last_fail_at"`
 		CreatedAt             types.String `tfsdk:"created_at"`
 		UpdatedAt             types.String `tfsdk:"updated_at"`
 	}
@@ -121,18 +116,26 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		config.CronExpression = types.StringNull()
 	}
 
-	config.PingURL = nullableString(job.PingURL)
-	config.Token = nullableString(job.Token)
+	if job.PingUrls != nil && job.PingUrls.Success != "" {
+		config.PingURL = types.StringValue(job.PingUrls.Success)
+		u := strings.TrimRight(job.PingUrls.Success, "/")
+		if i := strings.LastIndex(u, "/"); i >= 0 {
+			config.Token = types.StringValue(u[i+1:])
+		} else {
+			config.Token = types.StringValue(u)
+		}
+	} else {
+		config.PingURL = types.StringNull()
+		config.Token = types.StringNull()
+	}
+
 	config.Status = types.StringPointerValue(job.Status)
-	config.LastSuccessAt = nullableString(job.LastSuccessAt)
-	config.LastStartAt = nullableString(job.LastStartAt)
-	config.LastFailAt = nullableString(job.LastFailAt)
 	config.CreatedAt = types.StringValue(job.CreatedAt)
 	config.UpdatedAt = types.StringValue(job.UpdatedAt)
 
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {
-		tagElems[i] = types.StringValue(t)
+		tagElems[i] = types.StringValue(t.ID)
 	}
 	tv, d2 := types.SetValue(types.StringType, tagElems)
 	resp.Diagnostics.Append(d2...)
