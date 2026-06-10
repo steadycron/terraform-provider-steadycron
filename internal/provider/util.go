@@ -65,3 +65,13 @@ func appendAPIError(diags *diag.Diagnostics, action string, err error) {
 func boolPtr(b bool) *bool { return &b }
 
 func int64Ptr(i int64) *int64 { return &i }
+
+// stringPtrOrEmpty returns the pointed-to string, or "" if nil.
+// Use this for Optional+Computed fields with Default:"" to avoid null/empty drift
+// when the API returns null for an empty string field.
+func stringPtrOrEmpty(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

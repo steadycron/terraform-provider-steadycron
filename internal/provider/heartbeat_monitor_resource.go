@@ -368,7 +368,7 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 
 	m.ID = types.StringValue(job.ID)
 	m.Name = types.StringValue(job.Name)
-	m.Description = types.StringPointerValue(job.Description)
+	m.Description = types.StringValue(stringPtrOrEmpty(job.Description))
 	m.Timezone = types.StringValue(job.Timezone)
 	m.GraceSeconds = types.Int64Value(job.GraceSeconds)
 	m.StuckRunDetection = types.BoolValue(job.StuckRunDetection)

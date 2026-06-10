@@ -371,7 +371,7 @@ func httpJobResponseToModel(ctx context.Context, job *client.JobResponse, m *htt
 
 	m.ID = types.StringValue(job.ID)
 	m.Name = types.StringValue(job.Name)
-	m.Description = types.StringPointerValue(job.Description)
+	m.Description = types.StringValue(stringPtrOrEmpty(job.Description))
 	m.Timezone = types.StringValue(job.Timezone)
 	m.SkipIfRunning = types.BoolValue(job.SkipIfRunning)
 

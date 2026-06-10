@@ -23,7 +23,7 @@ type UpsertJobRequest struct {
 
 	// HTTP-specific
 	Method              string            `json:"method,omitempty"`
-	URL                 string            `json:"url,omitempty"`
+	URL                 string            `json:"http_url,omitempty"`
 	Headers             map[string]string `json:"headers,omitempty"`
 	Body                string            `json:"body,omitempty"`
 	TimeoutSeconds      *int64            `json:"timeout_seconds,omitempty"`
@@ -60,7 +60,7 @@ type JobResponse struct {
 
 	// HTTP-specific
 	Method              *string           `json:"method"`
-	URL                 *string           `json:"url"`
+	URL                 *string           `json:"http_url"`
 	Headers             map[string]string `json:"headers"`
 	Body                *string           `json:"body"`
 	TimeoutSeconds      *int64            `json:"timeout_seconds"`
