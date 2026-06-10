@@ -147,11 +147,11 @@ func min(a, b time.Duration) time.Duration {
 // ─── Jobs ────────────────────────────────────────────────────────────────────
 
 func (c *Client) ListJobs(ctx context.Context) ([]JobResponse, error) {
-	var out []JobResponse
-	if err := c.do(ctx, http.MethodGet, "/api/jobs", nil, &out); err != nil {
+	var out jobListResponse
+	if err := c.do(ctx, http.MethodGet, "/api/jobs?page=1&pageSize=100", nil, &out); err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out.Items, nil
 }
 
 func (c *Client) CreateJob(ctx context.Context, req UpsertJobRequest) (*JobResponse, error) {
@@ -332,8 +332,8 @@ func (c *Client) UpdateAlertRule(ctx context.Context, jobID, ruleID string, req 
 	return &out, nil
 }
 
-func (c *Client) DeleteAlertRule(ctx context.Context, jobID, ruleID string) error {
-	return c.do(ctx, http.MethodDelete, "/api/jobs/"+jobID+"/alert-rules/"+ruleID, nil, nil)
+func (c *Client) DeleteAlertRule(ctx context.Context, ruleID string) error {
+	return c.do(ctx, http.MethodDelete, "/api/alert-rules/"+ruleID, nil, nil)
 }
 
 // ─── Template Variables ──────────────────────────────────────────────────────

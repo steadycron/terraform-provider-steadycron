@@ -163,6 +163,12 @@ type TemplateVariableResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+// jobListResponse is the paginated envelope returned by GET /api/jobs.
+type jobListResponse struct {
+	Items      []JobResponse `json:"items"`
+	TotalCount int           `json:"total_count"`
+}
+
 // ─── Error responses ─────────────────────────────────────────────────────────
 
 // APIError represents a structured error returned by the API.

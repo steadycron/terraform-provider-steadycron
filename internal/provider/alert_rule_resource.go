@@ -203,7 +203,7 @@ func (r *AlertRuleResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	if err := r.client.DeleteAlertRule(ctx, state.JobID.ValueString(), state.ID.ValueString()); err != nil {
+	if err := r.client.DeleteAlertRule(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
 			appendAPIError(&resp.Diagnostics, "deleting alert rule", err)
 		}
