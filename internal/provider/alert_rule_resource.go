@@ -155,7 +155,7 @@ func (r *AlertRuleResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	rule, err := r.client.GetAlertRule(ctx, state.ID.ValueString())
+	rule, err := r.client.GetAlertRule(ctx, state.JobID.ValueString(), state.ID.ValueString())
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
@@ -186,7 +186,7 @@ func (r *AlertRuleResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	rule, err := r.client.UpdateAlertRule(ctx, state.ID.ValueString(), ruleModelToRequest(plan))
+	rule, err := r.client.UpdateAlertRule(ctx, state.JobID.ValueString(), state.ID.ValueString(), ruleModelToRequest(plan))
 	if err != nil {
 		appendAPIError(&resp.Diagnostics, "updating alert rule", err)
 		return
@@ -203,7 +203,7 @@ func (r *AlertRuleResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	if err := r.client.DeleteAlertRule(ctx, state.ID.ValueString()); err != nil {
+	if err := r.client.DeleteAlertRule(ctx, state.JobID.ValueString(), state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
 			appendAPIError(&resp.Diagnostics, "deleting alert rule", err)
 		}
@@ -211,7 +211,8 @@ func (r *AlertRuleResource) Delete(ctx context.Context, req resource.DeleteReque
 }
 
 func (r *AlertRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	rule, err := r.client.GetAlertRule(ctx, req.ID)
+	// Scan all jobs to locate the rule by ID (no flat GET-by-ID endpoint exists).
+	rule, err := r.client.FindAlertRuleByID(ctx, req.ID)
 	if err != nil {
 		if client.IsNotFound(err) {
 			resp.Diagnostics.AddError("Alert rule not found", fmt.Sprintf("No alert rule with id %q was found.", req.ID))

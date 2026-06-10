@@ -146,6 +146,14 @@ func min(a, b time.Duration) time.Duration {
 
 // ─── Jobs ────────────────────────────────────────────────────────────────────
 
+func (c *Client) ListJobs(ctx context.Context) ([]JobResponse, error) {
+	var out []JobResponse
+	if err := c.do(ctx, http.MethodGet, "/api/jobs", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *Client) CreateJob(ctx context.Context, req UpsertJobRequest) (*JobResponse, error) {
 	var out JobResponse
 	if err := c.do(ctx, http.MethodPost, "/api/jobs", req, &out); err != nil {
@@ -273,24 +281,59 @@ func (c *Client) CreateAlertRule(ctx context.Context, jobID string, req UpsertAl
 	return &out, nil
 }
 
-func (c *Client) GetAlertRule(ctx context.Context, id string) (*AlertRuleResponse, error) {
+func (c *Client) ListAlertRules(ctx context.Context, jobID string) ([]AlertRuleResponse, error) {
+	var out []AlertRuleResponse
+	if err := c.do(ctx, http.MethodGet, "/api/jobs/"+jobID+"/alert-rules", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetAlertRule fetches a single rule by ID using the job-scoped list endpoint.
+func (c *Client) GetAlertRule(ctx context.Context, jobID, ruleID string) (*AlertRuleResponse, error) {
+	rules, err := c.ListAlertRules(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range rules {
+		if rules[i].ID == ruleID {
+			return &rules[i], nil
+		}
+	}
+	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "alert rule not found"}
+}
+
+// FindAlertRuleByID scans all jobs to locate a rule by ID.
+// Used for ImportState where the job ID is not known upfront.
+func (c *Client) FindAlertRuleByID(ctx context.Context, ruleID string) (*AlertRuleResponse, error) {
+	jobs, err := c.ListJobs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, job := range jobs {
+		rules, err := c.ListAlertRules(ctx, job.ID)
+		if err != nil {
+			continue
+		}
+		for i := range rules {
+			if rules[i].ID == ruleID {
+				return &rules[i], nil
+			}
+		}
+	}
+	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "alert rule not found"}
+}
+
+func (c *Client) UpdateAlertRule(ctx context.Context, jobID, ruleID string, req UpsertAlertRuleRequest) (*AlertRuleResponse, error) {
 	var out AlertRuleResponse
-	if err := c.do(ctx, http.MethodGet, "/api/alert-rules/"+id, nil, &out); err != nil {
+	if err := c.do(ctx, http.MethodPatch, "/api/jobs/"+jobID+"/alert-rules/"+ruleID, req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
-func (c *Client) UpdateAlertRule(ctx context.Context, id string, req UpsertAlertRuleRequest) (*AlertRuleResponse, error) {
-	var out AlertRuleResponse
-	if err := c.do(ctx, http.MethodPatch, "/api/alert-rules/"+id, req, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-func (c *Client) DeleteAlertRule(ctx context.Context, id string) error {
-	return c.do(ctx, http.MethodDelete, "/api/alert-rules/"+id, nil, nil)
+func (c *Client) DeleteAlertRule(ctx context.Context, jobID, ruleID string) error {
+	return c.do(ctx, http.MethodDelete, "/api/jobs/"+jobID+"/alert-rules/"+ruleID, nil, nil)
 }
 
 // ─── Template Variables ──────────────────────────────────────────────────────
