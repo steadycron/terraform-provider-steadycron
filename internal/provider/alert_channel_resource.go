@@ -162,7 +162,7 @@ func (r *AlertChannelResource) Create(ctx context.Context, req resource.CreateRe
 
 	ch, apiErr := r.client.CreateAlertChannel(ctx, apiReq)
 	if apiErr != nil {
-		appendAPIError(resp.Diagnostics, "creating alert channel", apiErr)
+		appendAPIError(&resp.Diagnostics, "creating alert channel", apiErr)
 		return
 	}
 
@@ -186,7 +186,7 @@ func (r *AlertChannelResource) Read(ctx context.Context, req resource.ReadReques
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading alert channel", err)
+		appendAPIError(&resp.Diagnostics, "reading alert channel", err)
 		return
 	}
 
@@ -215,7 +215,7 @@ func (r *AlertChannelResource) Update(ctx context.Context, req resource.UpdateRe
 
 	ch, apiErr := r.client.UpdateAlertChannel(ctx, state.ID.ValueString(), apiReq)
 	if apiErr != nil {
-		appendAPIError(resp.Diagnostics, "updating alert channel", apiErr)
+		appendAPIError(&resp.Diagnostics, "updating alert channel", apiErr)
 		return
 	}
 
@@ -232,7 +232,7 @@ func (r *AlertChannelResource) Delete(ctx context.Context, req resource.DeleteRe
 
 	if err := r.client.DeleteAlertChannel(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting alert channel", err)
+			appendAPIError(&resp.Diagnostics, "deleting alert channel", err)
 		}
 	}
 }
@@ -244,7 +244,7 @@ func (r *AlertChannelResource) ImportState(ctx context.Context, req resource.Imp
 			resp.Diagnostics.AddError("Alert channel not found", fmt.Sprintf("No alert channel with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing alert channel", err)
+		appendAPIError(&resp.Diagnostics, "importing alert channel", err)
 		return
 	}
 

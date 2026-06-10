@@ -109,7 +109,7 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			resp.Diagnostics.AddError("Job not found", fmt.Sprintf("No job with id %q was found.", config.ID.ValueString()))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading HTTP job data source", err)
+		appendAPIError(&resp.Diagnostics, "reading HTTP job data source", err)
 		return
 	}
 	if job.Kind != "http" {

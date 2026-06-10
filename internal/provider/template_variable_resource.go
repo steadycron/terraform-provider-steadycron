@@ -88,7 +88,7 @@ func (r *TemplateVariableResource) Create(ctx context.Context, req resource.Crea
 		Name: plan.Name.ValueString(),
 	})
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "creating template variable", err)
+		appendAPIError(&resp.Diagnostics, "creating template variable", err)
 		return
 	}
 
@@ -109,7 +109,7 @@ func (r *TemplateVariableResource) Read(ctx context.Context, req resource.ReadRe
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading template variable", err)
+		appendAPIError(&resp.Diagnostics, "reading template variable", err)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (r *TemplateVariableResource) Update(ctx context.Context, req resource.Upda
 		Name: plan.Name.ValueString(),
 	})
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "updating template variable", err)
+		appendAPIError(&resp.Diagnostics, "updating template variable", err)
 		return
 	}
 
@@ -150,7 +150,7 @@ func (r *TemplateVariableResource) Delete(ctx context.Context, req resource.Dele
 
 	if err := r.client.DeleteTemplateVariable(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting template variable", err)
+			appendAPIError(&resp.Diagnostics, "deleting template variable", err)
 		}
 	}
 }
@@ -162,7 +162,7 @@ func (r *TemplateVariableResource) ImportState(ctx context.Context, req resource
 			resp.Diagnostics.AddError("Template variable not found", fmt.Sprintf("No template variable with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing template variable", err)
+		appendAPIError(&resp.Diagnostics, "importing template variable", err)
 		return
 	}
 

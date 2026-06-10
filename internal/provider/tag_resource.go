@@ -96,7 +96,7 @@ func (r *TagResource) Create(ctx context.Context, req resource.CreateRequest, re
 		Color: plan.Color.ValueString(),
 	})
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "creating tag", err)
+		appendAPIError(&resp.Diagnostics, "creating tag", err)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (r *TagResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading tag", err)
+		appendAPIError(&resp.Diagnostics, "reading tag", err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (r *TagResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Color: plan.Color.ValueString(),
 	})
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "updating tag", err)
+		appendAPIError(&resp.Diagnostics, "updating tag", err)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (r *TagResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 
 	if err := r.client.DeleteTag(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting tag", err)
+			appendAPIError(&resp.Diagnostics, "deleting tag", err)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func (r *TagResource) ImportState(ctx context.Context, req resource.ImportStateR
 			resp.Diagnostics.AddError("Tag not found", fmt.Sprintf("No tag with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing tag", err)
+		appendAPIError(&resp.Diagnostics, "importing tag", err)
 		return
 	}
 

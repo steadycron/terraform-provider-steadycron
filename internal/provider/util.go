@@ -25,7 +25,7 @@ func validateSchedule(cronExpr types.String, intervalSecs types.Int64) error {
 
 // appendAPIError translates client.APIError into Terraform diagnostics,
 // mapping known 422 error codes to helpful attribute-level messages.
-func appendAPIError(diags diag.Diagnostics, action string, err error) {
+func appendAPIError(diags *diag.Diagnostics, action string, err error) {
 	var apiErr *client.APIError
 	if !errors.As(err, &apiErr) {
 		diags.AddError("API error while "+action, err.Error())

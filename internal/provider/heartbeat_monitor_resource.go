@@ -191,8 +191,17 @@ func (r *HeartbeatMonitorResource) Create(ctx context.Context, req resource.Crea
 
 	job, err := r.client.CreateJob(ctx, apiReq)
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "creating heartbeat monitor", err)
+		appendAPIError(&resp.Diagnostics, "creating heartbeat monitor", err)
 		return
+	}
+
+	// The Create response may omit ping_url/token; fetch the full resource via GET.
+	if job.PingURL == "" {
+		job, err = r.client.GetJob(ctx, job.ID)
+		if err != nil {
+			appendAPIError(&resp.Diagnostics, "reading heartbeat monitor after create", err)
+			return
+		}
 	}
 
 	resp.Diagnostics.Append(heartbeatResponseToModel(ctx, job, &plan)...)
@@ -215,7 +224,7 @@ func (r *HeartbeatMonitorResource) Read(ctx context.Context, req resource.ReadRe
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading heartbeat monitor", err)
+		appendAPIError(&resp.Diagnostics, "reading heartbeat monitor", err)
 		return
 	}
 
@@ -264,7 +273,7 @@ func (r *HeartbeatMonitorResource) Update(ctx context.Context, req resource.Upda
 
 	job, err := r.client.UpdateJob(ctx, state.ID.ValueString(), apiReq)
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "updating heartbeat monitor", err)
+		appendAPIError(&resp.Diagnostics, "updating heartbeat monitor", err)
 		return
 	}
 
@@ -296,7 +305,7 @@ func (r *HeartbeatMonitorResource) Delete(ctx context.Context, req resource.Dele
 
 	if err := r.client.DeleteJob(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting heartbeat monitor", err)
+			appendAPIError(&resp.Diagnostics, "deleting heartbeat monitor", err)
 		}
 	}
 }
@@ -308,7 +317,7 @@ func (r *HeartbeatMonitorResource) ImportState(ctx context.Context, req resource
 			resp.Diagnostics.AddError("Monitor not found", fmt.Sprintf("No heartbeat monitor with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing heartbeat monitor", err)
+		appendAPIError(&resp.Diagnostics, "importing heartbeat monitor", err)
 		return
 	}
 	if job.Kind != "heartbeat" {
@@ -373,13 +382,10 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 		m.CronExpression = types.StringNull()
 	}
 
-	// ping_url and token: set if non-empty (they may be redacted in GET responses after creation).
-	if job.PingURL != "" {
-		m.PingURL = types.StringValue(job.PingURL)
-	}
-	if job.Token != "" {
-		m.Token = types.StringValue(job.Token)
-	}
+	// Always set to a known value. GET responses may redact these fields (returning "");
+	// Read/Update callers preserve the prior state value in that case.
+	m.PingURL = types.StringValue(job.PingURL)
+	m.Token = types.StringValue(job.Token)
 
 	m.Status = types.StringPointerValue(job.Status)
 	m.LastSuccessAt = nullableString(job.LastSuccessAt)

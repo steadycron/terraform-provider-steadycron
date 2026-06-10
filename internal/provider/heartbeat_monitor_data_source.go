@@ -98,7 +98,7 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 			resp.Diagnostics.AddError("Monitor not found", fmt.Sprintf("No heartbeat monitor with id %q was found.", config.ID.ValueString()))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading heartbeat monitor data source", err)
+		appendAPIError(&resp.Diagnostics, "reading heartbeat monitor data source", err)
 		return
 	}
 	if job.Kind != "heartbeat" {

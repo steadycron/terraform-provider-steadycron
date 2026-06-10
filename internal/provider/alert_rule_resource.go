@@ -140,7 +140,7 @@ func (r *AlertRuleResource) Create(ctx context.Context, req resource.CreateReque
 
 	rule, err := r.client.CreateAlertRule(ctx, ruleModelToRequest(plan))
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "creating alert rule", err)
+		appendAPIError(&resp.Diagnostics, "creating alert rule", err)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (r *AlertRuleResource) Read(ctx context.Context, req resource.ReadRequest, 
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading alert rule", err)
+		appendAPIError(&resp.Diagnostics, "reading alert rule", err)
 		return
 	}
 
@@ -188,7 +188,7 @@ func (r *AlertRuleResource) Update(ctx context.Context, req resource.UpdateReque
 
 	rule, err := r.client.UpdateAlertRule(ctx, state.ID.ValueString(), ruleModelToRequest(plan))
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "updating alert rule", err)
+		appendAPIError(&resp.Diagnostics, "updating alert rule", err)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (r *AlertRuleResource) Delete(ctx context.Context, req resource.DeleteReque
 
 	if err := r.client.DeleteAlertRule(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting alert rule", err)
+			appendAPIError(&resp.Diagnostics, "deleting alert rule", err)
 		}
 	}
 }
@@ -217,7 +217,7 @@ func (r *AlertRuleResource) ImportState(ctx context.Context, req resource.Import
 			resp.Diagnostics.AddError("Alert rule not found", fmt.Sprintf("No alert rule with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing alert rule", err)
+		appendAPIError(&resp.Diagnostics, "importing alert rule", err)
 		return
 	}
 

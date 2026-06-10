@@ -208,7 +208,7 @@ func (r *HTTPJobResource) Create(ctx context.Context, req resource.CreateRequest
 
 	job, err := r.client.CreateJob(ctx, apiReq)
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "creating HTTP job", err)
+		appendAPIError(&resp.Diagnostics, "creating HTTP job", err)
 		return
 	}
 
@@ -232,7 +232,7 @@ func (r *HTTPJobResource) Read(ctx context.Context, req resource.ReadRequest, re
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading HTTP job", err)
+		appendAPIError(&resp.Diagnostics, "reading HTTP job", err)
 		return
 	}
 
@@ -269,7 +269,7 @@ func (r *HTTPJobResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	job, err := r.client.UpdateJob(ctx, state.ID.ValueString(), apiReq)
 	if err != nil {
-		appendAPIError(resp.Diagnostics, "updating HTTP job", err)
+		appendAPIError(&resp.Diagnostics, "updating HTTP job", err)
 		return
 	}
 
@@ -289,7 +289,7 @@ func (r *HTTPJobResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	if err := r.client.DeleteJob(ctx, state.ID.ValueString()); err != nil {
 		if !client.IsNotFound(err) {
-			appendAPIError(resp.Diagnostics, "deleting HTTP job", err)
+			appendAPIError(&resp.Diagnostics, "deleting HTTP job", err)
 		}
 	}
 }
@@ -301,7 +301,7 @@ func (r *HTTPJobResource) ImportState(ctx context.Context, req resource.ImportSt
 			resp.Diagnostics.AddError("Job not found", fmt.Sprintf("No HTTP job with id %q was found.", req.ID))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "importing HTTP job", err)
+		appendAPIError(&resp.Diagnostics, "importing HTTP job", err)
 		return
 	}
 	if job.Kind != "http" {

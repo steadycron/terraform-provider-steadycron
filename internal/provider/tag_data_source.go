@@ -68,7 +68,7 @@ func (d *TagDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddError("Tag not found", fmt.Sprintf("No tag with id %q was found.", config.ID.ValueString()))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading tag data source", err)
+		appendAPIError(&resp.Diagnostics, "reading tag data source", err)
 		return
 	}
 

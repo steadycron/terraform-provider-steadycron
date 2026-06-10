@@ -74,7 +74,7 @@ func (d *AlertChannelDataSource) Read(ctx context.Context, req datasource.ReadRe
 			resp.Diagnostics.AddError("Alert channel not found", fmt.Sprintf("No alert channel with id %q was found.", config.ID.ValueString()))
 			return
 		}
-		appendAPIError(resp.Diagnostics, "reading alert channel data source", err)
+		appendAPIError(&resp.Diagnostics, "reading alert channel data source", err)
 		return
 	}
 
