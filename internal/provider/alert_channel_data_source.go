@@ -79,7 +79,7 @@ func (d *AlertChannelDataSource) Read(ctx context.Context, req datasource.ReadRe
 
 	config.Name = types.StringValue(ch.Name)
 	config.Kind = types.StringValue(ch.Kind)
-	config.CreatedAt = types.StringValue(ch.CreatedAt)
+	config.CreatedAt = types.StringValue(normalizeTimestamp(ch.CreatedAt))
 
 	if ch.Config != nil {
 		switch ch.Kind {

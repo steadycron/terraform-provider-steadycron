@@ -110,7 +110,8 @@ func (r *HTTPJobResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"timeout_seconds": schema.Int64Attribute{
 				Optional:            true,
-				MarkdownDescription: "Request timeout in seconds. The server enforces a plan-specific maximum. A `422` with `frequency_below_plan_floor` or similar is reported as a diagnostic.",
+				Computed:            true,
+				MarkdownDescription: "Request timeout in seconds. The server enforces a plan-specific maximum. Defaults to the account plan's default when not set.",
 			},
 			"max_retries": schema.Int64Attribute{
 				Optional:            true,
@@ -432,8 +433,8 @@ func httpJobResponseToModel(ctx context.Context, job *client.JobResponse, m *htt
 	m.Status = types.StringPointerValue(job.Status)
 	m.NextFireAt = types.StringPointerValue(job.NextFireAt)
 	m.LastFireAt = types.StringPointerValue(job.LastFireAt)
-	m.CreatedAt = types.StringValue(job.CreatedAt)
-	m.UpdatedAt = types.StringValue(job.UpdatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
+	m.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
 
 	return diags
 }

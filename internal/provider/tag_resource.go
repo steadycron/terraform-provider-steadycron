@@ -186,5 +186,5 @@ func tagResponseToModel(tag *client.TagResponse, m *tagModel) {
 	m.Key = types.StringValue(tag.Key)
 	m.Value = types.StringValue(tag.Value)
 	m.Color = types.StringValue(tag.Color)
-	m.CreatedAt = types.StringValue(tag.CreatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(tag.CreatedAt))
 }

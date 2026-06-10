@@ -315,7 +315,7 @@ func channelResponseToModel(ch *client.AlertChannelResponse, m *alertChannelMode
 	m.ID = types.StringValue(ch.ID)
 	m.Name = types.StringValue(ch.Name)
 	m.Kind = types.StringValue(ch.Kind)
-	m.CreatedAt = types.StringValue(ch.CreatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(ch.CreatedAt))
 
 	// Parse config — non-secret fields are populated; secrets stay null if redacted.
 	if ch.Config != nil {

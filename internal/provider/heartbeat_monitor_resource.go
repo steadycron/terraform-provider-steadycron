@@ -385,8 +385,8 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 	}
 
 	m.Status = types.StringPointerValue(job.Status)
-	m.CreatedAt = types.StringValue(job.CreatedAt)
-	m.UpdatedAt = types.StringValue(job.UpdatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
+	m.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
 
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {

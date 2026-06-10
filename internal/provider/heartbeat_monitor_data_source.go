@@ -130,8 +130,8 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 	}
 
 	config.Status = types.StringPointerValue(job.Status)
-	config.CreatedAt = types.StringValue(job.CreatedAt)
-	config.UpdatedAt = types.StringValue(job.UpdatedAt)
+	config.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
+	config.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
 
 	tagElems := make([]attr.Value, len(job.Tags))
 	for i, t := range job.Tags {

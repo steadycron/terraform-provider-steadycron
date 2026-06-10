@@ -174,6 +174,6 @@ func (r *TemplateVariableResource) ImportState(ctx context.Context, req resource
 func tvResponseToModel(tv *client.TemplateVariableResponse, m *templateVariableModel) {
 	m.ID = types.StringValue(tv.ID)
 	m.Name = types.StringValue(tv.Name)
-	m.CreatedAt = types.StringValue(tv.CreatedAt)
-	m.UpdatedAt = types.StringValue(tv.UpdatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(tv.CreatedAt))
+	m.UpdatedAt = types.StringValue(normalizeTimestamp(tv.UpdatedAt))
 }

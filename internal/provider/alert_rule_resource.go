@@ -278,7 +278,7 @@ func ruleResponseToModel(rule *client.AlertRuleResponse, m *alertRuleModel) {
 	m.Trigger = types.StringValue(rule.Trigger)
 	m.Severity = types.StringValue(rule.Severity)
 	m.DedupWindowSeconds = types.Int64Value(rule.DedupWindowSeconds)
-	m.CreatedAt = types.StringValue(rule.CreatedAt)
+	m.CreatedAt = types.StringValue(normalizeTimestamp(rule.CreatedAt))
 
 	if rule.Params != nil {
 		if rule.Params.Threshold != nil {

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -74,4 +76,23 @@ func stringPtrOrEmpty(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// subMicrosecondRe matches ISO 8601 timestamps that have more than 6 fractional-second digits.
+var subMicrosecondRe = regexp.MustCompile(`(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{7,})([+-]\d{2}:\d{2}|Z)`)
+
+// normalizeTimestamp truncates sub-microsecond precision from API timestamps so that
+// POST responses (7 digits) and GET responses (6 digits) produce identical strings in state.
+func normalizeTimestamp(s string) string {
+	return subMicrosecondRe.ReplaceAllStringFunc(s, func(m string) string {
+		sub := subMicrosecondRe.FindStringSubmatch(m)
+		if sub == nil {
+			return m
+		}
+		frac := strings.TrimRight(sub[2][:6], "0")
+		if frac == "" {
+			return sub[1] + sub[3]
+		}
+		return sub[1] + "." + frac + sub[3]
+	})
 }

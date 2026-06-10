@@ -167,8 +167,8 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	config.Status = types.StringPointerValue(job.Status)
 	config.NextFireAt = types.StringPointerValue(job.NextFireAt)
 	config.LastFireAt = types.StringPointerValue(job.LastFireAt)
-	config.CreatedAt = types.StringValue(job.CreatedAt)
-	config.UpdatedAt = types.StringValue(job.UpdatedAt)
+	config.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
+	config.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

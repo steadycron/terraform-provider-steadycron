@@ -75,7 +75,7 @@ func (d *TagDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	config.Key = types.StringValue(tag.Key)
 	config.Value = types.StringValue(tag.Value)
 	config.Color = types.StringValue(tag.Color)
-	config.CreatedAt = types.StringValue(tag.CreatedAt)
+	config.CreatedAt = types.StringValue(normalizeTimestamp(tag.CreatedAt))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
