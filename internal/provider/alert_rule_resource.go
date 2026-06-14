@@ -252,13 +252,15 @@ func ruleModelToRequest(m alertRuleModel) client.UpsertAlertRuleRequest {
 		req.DedupWindowSeconds = &v
 	}
 
-	// Threshold, factor, and min_baseline_samples all go in the Params object.
-	if !m.Threshold.IsNull() || !m.ParamFactor.IsNull() || !m.ParamMinSamples.IsNull() {
+	// on_n_consecutive: threshold is a top-level field, not nested in params.
+	if !m.Threshold.IsNull() && !m.Threshold.IsUnknown() {
+		v := m.Threshold.ValueInt64()
+		req.Threshold = &v
+	}
+
+	// on_slow_run / on_size_anomaly: factor and min_baseline_samples go in params.
+	if !m.ParamFactor.IsNull() || !m.ParamMinSamples.IsNull() {
 		params := &client.Params{}
-		if !m.Threshold.IsNull() && !m.Threshold.IsUnknown() {
-			v := m.Threshold.ValueInt64()
-			params.Threshold = &v
-		}
 		if !m.ParamFactor.IsNull() {
 			v := m.ParamFactor.ValueFloat64()
 			params.Factor = &v
@@ -281,12 +283,14 @@ func ruleResponseToModel(rule *client.AlertRuleResponse, m *alertRuleModel) {
 	m.DedupWindowSeconds = types.Int64Value(rule.DedupWindowSeconds)
 	m.CreatedAt = types.StringValue(normalizeTimestamp(rule.CreatedAt))
 
+	// Threshold is a top-level response field for on_n_consecutive.
+	if rule.Threshold != nil {
+		m.Threshold = types.Int64Value(*rule.Threshold)
+	} else {
+		m.Threshold = types.Int64Null()
+	}
+
 	if rule.Params != nil {
-		if rule.Params.Threshold != nil {
-			m.Threshold = types.Int64Value(*rule.Params.Threshold)
-		} else {
-			m.Threshold = types.Int64Null()
-		}
 		if rule.Params.Factor != nil {
 			m.ParamFactor = types.Float64Value(*rule.Params.Factor)
 		} else {

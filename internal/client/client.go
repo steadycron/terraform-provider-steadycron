@@ -186,7 +186,7 @@ func (c *Client) DeleteJob(ctx context.Context, id string) error {
 // Pass an empty slice to clear all tags.
 func (c *Client) SetJobTags(ctx context.Context, jobID string, tagIDs []string) error {
 	type body struct {
-		TagIDs []string `json:"tagIds"`
+		TagIDs []string `json:"tag_ids"`
 	}
 	return c.do(ctx, http.MethodPut, "/api/jobs/"+jobID+"/tags", body{TagIDs: tagIDs}, nil)
 }

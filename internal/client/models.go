@@ -128,11 +128,12 @@ type UpsertAlertRuleRequest struct {
 	Trigger            string  `json:"trigger"`
 	Severity           string  `json:"severity,omitempty"`
 	DedupWindowSeconds *int64  `json:"dedup_window_seconds,omitempty"`
-	Params             *Params `json:"params,omitempty"`
+	// Threshold is required for on_n_consecutive; sent as a top-level field (not in params).
+	Threshold *int64  `json:"threshold,omitempty"`
+	Params    *Params `json:"params,omitempty"`
 }
 
 type Params struct {
-	Threshold          *int64   `json:"threshold,omitempty"`
 	Factor             *float64 `json:"factor,omitempty"`
 	MinBaselineSamples *int64   `json:"min_baseline_samples,omitempty"`
 }
@@ -144,8 +145,10 @@ type AlertRuleResponse struct {
 	Trigger            string  `json:"trigger"`
 	Severity           string  `json:"severity"`
 	DedupWindowSeconds int64   `json:"dedup_window_seconds"`
-	Params             *Params `json:"params"`
-	CreatedAt          string  `json:"created_at"`
+	// Threshold is the consecutive-failure count for on_n_consecutive rules.
+	Threshold *int64  `json:"threshold"`
+	Params    *Params `json:"params"`
+	CreatedAt string  `json:"created_at"`
 }
 
 // ─── Template Variable ───────────────────────────────────────────────────────

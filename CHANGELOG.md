@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-06-14
+
+### Fixed
+- Tags were not applied to jobs after `terraform apply`: `SetJobTags` was sending `{"tagIds": [...]}` but the API's snake_case naming policy requires `{"tag_ids": [...]}`, so the body always deserialized as null and the tag set was silently cleared instead of being written
+- `on_n_consecutive` alert rules now correctly send `threshold` as a top-level field in the request (previously it was incorrectly nested inside `params`, which the API rejects)
+- Creating a heartbeat monitor via API key no longer auto-creates a default email alert rule (`on_missed_heartbeat` + `on_failure`); those UI-convenience defaults are now skipped for programmatic callers so the declared rule set is the only one that exists
+
 ## [1.0.2] - 2026-06-14
 
 ### Added
