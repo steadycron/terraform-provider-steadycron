@@ -302,7 +302,6 @@ func ruleResponseToModel(rule *client.AlertRuleResponse, m *alertRuleModel) {
 			m.ParamMinSamples = types.Int64Null()
 		}
 	} else {
-		m.Threshold = types.Int64Null()
 		m.ParamFactor = types.Float64Null()
 		m.ParamMinSamples = types.Int64Null()
 	}

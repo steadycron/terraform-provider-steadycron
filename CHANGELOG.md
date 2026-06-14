@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-06-14
+
+### Fixed
+- `on_n_consecutive` alert rules no longer show "Provider produced inconsistent result after apply: .threshold was N, but now null" — the `ruleResponseToModel` else-branch incorrectly overwrote the already-set threshold when `params` is null (which is always the case for `on_n_consecutive`)
+
 ## [1.0.3] - 2026-06-14
 
 ### Fixed
