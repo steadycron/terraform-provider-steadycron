@@ -182,6 +182,15 @@ func (c *Client) DeleteJob(ctx context.Context, id string) error {
 	return c.do(ctx, http.MethodDelete, "/api/jobs/"+id, nil, nil)
 }
 
+// SetJobTags replaces the full tag set on a job atomically.
+// Pass an empty slice to clear all tags.
+func (c *Client) SetJobTags(ctx context.Context, jobID string, tagIDs []string) error {
+	type body struct {
+		TagIDs []string `json:"tagIds"`
+	}
+	return c.do(ctx, http.MethodPut, "/api/jobs/"+jobID+"/tags", body{TagIDs: tagIDs}, nil)
+}
+
 // ─── Tags ────────────────────────────────────────────────────────────────────
 
 func (c *Client) ListTags(ctx context.Context) ([]TagResponse, error) {

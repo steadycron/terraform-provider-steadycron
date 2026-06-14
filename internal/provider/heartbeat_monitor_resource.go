@@ -181,6 +181,12 @@ func (r *HeartbeatMonitorResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// The create body does not wire tags; use the dedicated endpoint.
+	if err := r.client.SetJobTags(ctx, job.ID, apiReq.Tags); err != nil {
+		appendAPIError(&resp.Diagnostics, "setting tags on heartbeat monitor", err)
+		return
+	}
+
 	// The Create response may omit ping_url; fetch the full resource via GET.
 	if job.PingUrls == nil || job.PingUrls.Success == "" {
 		job, err = r.client.GetJob(ctx, job.ID)
@@ -190,10 +196,15 @@ func (r *HeartbeatMonitorResource) Create(ctx context.Context, req resource.Crea
 		}
 	}
 
+	// Save planned tags before heartbeatResponseToModel overwrites them with the
+	// create response (which has no tags since tags are set via a separate endpoint).
+	plannedTags := plan.Tags
+
 	resp.Diagnostics.Append(heartbeatResponseToModel(ctx, job, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	plan.Tags = plannedTags
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -263,9 +274,19 @@ func (r *HeartbeatMonitorResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
+	// Sync tags via the dedicated endpoint — update body does not wire tags.
+	if err := r.client.SetJobTags(ctx, state.ID.ValueString(), apiReq.Tags); err != nil {
+		appendAPIError(&resp.Diagnostics, "setting tags on heartbeat monitor", err)
+		return
+	}
+
 	// Preserve sensitive fields from state — token is stable across renames.
 	savedToken := state.Token
 	savedPingURL := state.PingURL
+
+	// Save planned tags before heartbeatResponseToModel overwrites them with the
+	// update response (which has no tags).
+	plannedTags := plan.Tags
 
 	resp.Diagnostics.Append(heartbeatResponseToModel(ctx, job, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -278,6 +299,7 @@ func (r *HeartbeatMonitorResource) Update(ctx context.Context, req resource.Upda
 	if plan.PingURL.IsNull() || plan.PingURL.ValueString() == "" {
 		plan.PingURL = savedPingURL
 	}
+	plan.Tags = plannedTags
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

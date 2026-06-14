@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/steadycron/terraform-provider-steadycron/internal/client"
@@ -26,6 +27,7 @@ type TemplateVariableResource struct {
 type templateVariableModel struct {
 	ID        types.String `tfsdk:"id"`
 	Name      types.String `tfsdk:"name"`
+	Value     types.String `tfsdk:"value"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	UpdatedAt types.String `tfsdk:"updated_at"`
 }
@@ -51,6 +53,13 @@ func (r *TemplateVariableResource) Schema(_ context.Context, _ resource.SchemaRe
 			"name": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Variable name used in `{{name}}` placeholders. Must be unique within the account.",
+			},
+			"value": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				Sensitive:           true,
+				Default:             stringdefault.StaticString(""),
+				MarkdownDescription: "Value substituted server-side at execution time. Sensitive — stored encrypted in Terraform state. Leave unset to manage the name only and set the value out-of-band (dashboard or CLI).",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:            true,
@@ -85,7 +94,8 @@ func (r *TemplateVariableResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	tv, err := r.client.CreateTemplateVariable(ctx, client.UpsertTemplateVariableRequest{
-		Name: plan.Name.ValueString(),
+		Name:  plan.Name.ValueString(),
+		Value: plan.Value.ValueString(),
 	})
 	if err != nil {
 		appendAPIError(&resp.Diagnostics, "creating template variable", err)
@@ -130,7 +140,8 @@ func (r *TemplateVariableResource) Update(ctx context.Context, req resource.Upda
 	}
 
 	tv, err := r.client.UpdateTemplateVariable(ctx, state.ID.ValueString(), client.UpsertTemplateVariableRequest{
-		Name: plan.Name.ValueString(),
+		Name:  plan.Name.ValueString(),
+		Value: plan.Value.ValueString(),
 	})
 	if err != nil {
 		appendAPIError(&resp.Diagnostics, "updating template variable", err)
@@ -174,6 +185,7 @@ func (r *TemplateVariableResource) ImportState(ctx context.Context, req resource
 func tvResponseToModel(tv *client.TemplateVariableResponse, m *templateVariableModel) {
 	m.ID = types.StringValue(tv.ID)
 	m.Name = types.StringValue(tv.Name)
+	m.Value = types.StringValue(tv.Value)
 	m.CreatedAt = types.StringValue(normalizeTimestamp(tv.CreatedAt))
 	m.UpdatedAt = types.StringValue(normalizeTimestamp(tv.UpdatedAt))
 }

@@ -23,7 +23,7 @@ terraform {
   required_providers {
     steadycron = {
       source  = "steadycron/steadycron"
-      version = "~> 0.1"
+      version = "1.0.1"
     }
   }
 }
@@ -95,7 +95,7 @@ terraform {
   required_providers {
     steadycron = {
       source  = "steadycron/steadycron"
-      version = "~> 0.1"
+      version = "1.0.1"
     }
   }
 }

@@ -151,14 +151,15 @@ type AlertRuleResponse struct {
 // ─── Template Variable ───────────────────────────────────────────────────────
 
 type UpsertTemplateVariableRequest struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TemplateVariableResponse struct {
 	ID        string `json:"id"`
 	AccountID string `json:"account_id"`
 	Name      string `json:"name"`
-	// Value is intentionally omitted — it is write-only server-side.
+	Value     string `json:"value"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }

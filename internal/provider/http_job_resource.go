@@ -213,10 +213,21 @@ func (r *HTTPJobResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	// The create body does not wire tags; use the dedicated endpoint.
+	if err := r.client.SetJobTags(ctx, job.ID, apiReq.Tags); err != nil {
+		appendAPIError(&resp.Diagnostics, "setting tags on HTTP job", err)
+		return
+	}
+
+	// Save planned tags before httpJobResponseToModel overwrites them with the
+	// create response (which has no tags since tags are set via a separate endpoint).
+	plannedTags := plan.Tags
+
 	resp.Diagnostics.Append(httpJobResponseToModel(ctx, job, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	plan.Tags = plannedTags
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -274,10 +285,21 @@ func (r *HTTPJobResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
+	// Sync tags via the dedicated endpoint — update body does not wire tags.
+	if err := r.client.SetJobTags(ctx, state.ID.ValueString(), apiReq.Tags); err != nil {
+		appendAPIError(&resp.Diagnostics, "setting tags on HTTP job", err)
+		return
+	}
+
+	// Save planned tags before httpJobResponseToModel overwrites them with the
+	// update response (which has no tags).
+	plannedTags := plan.Tags
+
 	resp.Diagnostics.Append(httpJobResponseToModel(ctx, job, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	plan.Tags = plannedTags
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
