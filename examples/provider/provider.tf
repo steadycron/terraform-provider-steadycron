@@ -2,7 +2,7 @@ terraform {
   required_providers {
     steadycron = {
       source  = "steadycron/steadycron"
-      version = "1.0.1"
+      version = "1.0.2"
     }
   }
 }
