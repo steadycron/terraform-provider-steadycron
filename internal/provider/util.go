@@ -54,6 +54,9 @@ func appendAPIError(diags *diag.Diagnostics, action string, err error) {
 			msg = "Schedule frequency is below the minimum allowed by your plan. Use a longer interval or cron expression."
 		case "plan_account_too_new":
 			msg = "Account is too new to create HTTP jobs with external URLs. Wait 24 hours."
+		case "duplicate_monitor_key":
+			msg = fmt.Sprintf("Monitor key already in use: %s. Each monitor key must be unique within the account. "+
+				"Choose a different value for the `key` attribute or remove it from the other job first.", apiErr.Message)
 		}
 		diags.AddError("Validation error while "+action, msg)
 	default:

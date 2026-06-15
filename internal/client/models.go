@@ -31,6 +31,10 @@ type UpsertJobRequest struct {
 
 	// Tags — list of tag UUIDs.
 	Tags []string `json:"tags,omitempty"`
+
+	// ManifestKey is the stable human-authored key used by code-monitoring SDKs.
+	// Optional: when omitted, the server auto-generates a slug from the job name.
+	ManifestKey *string `json:"manifest_key,omitempty"`
 }
 
 // PingUrls holds the three heartbeat ping endpoints.
@@ -85,6 +89,10 @@ type JobResponse struct {
 	Tags       []JobTagInfo `json:"tags"`
 	CreatedAt  string       `json:"created_at"`
 	UpdatedAt  string       `json:"updated_at"`
+
+	// ManifestKey is the stable human-authored key used by code-monitoring SDKs.
+	// Null when not yet set (e.g. legacy jobs created before SPEC-18).
+	ManifestKey *string `json:"manifest_key"`
 }
 
 // ─── Tag ─────────────────────────────────────────────────────────────────────

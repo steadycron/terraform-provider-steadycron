@@ -45,6 +45,7 @@ func (d *HeartbeatMonitorDataSource) Schema(_ context.Context, _ datasource.Sche
 			},
 			"ping_url":   schema.StringAttribute{Computed: true, Sensitive: true},
 			"token":      schema.StringAttribute{Computed: true, Sensitive: true},
+			"key":        schema.StringAttribute{Computed: true, MarkdownDescription: "Stable monitor key used by code-monitoring SDKs (`manifest_key` on the server)."},
 			"status":     schema.StringAttribute{Computed: true},
 			"created_at": schema.StringAttribute{Computed: true},
 			"updated_at": schema.StringAttribute{Computed: true},
@@ -78,6 +79,7 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		Tags                  types.Set    `tfsdk:"tags"`
 		PingURL               types.String `tfsdk:"ping_url"`
 		Token                 types.String `tfsdk:"token"`
+		Key                   types.String `tfsdk:"key"`
 		Status                types.String `tfsdk:"status"`
 		CreatedAt             types.String `tfsdk:"created_at"`
 		UpdatedAt             types.String `tfsdk:"updated_at"`
@@ -127,6 +129,12 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 	} else {
 		config.PingURL = types.StringNull()
 		config.Token = types.StringNull()
+	}
+
+	if job.ManifestKey != nil {
+		config.Key = types.StringValue(*job.ManifestKey)
+	} else {
+		config.Key = types.StringNull()
 	}
 
 	config.Status = types.StringPointerValue(job.Status)

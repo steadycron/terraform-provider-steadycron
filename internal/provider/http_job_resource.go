@@ -49,6 +49,7 @@ type httpJobModel struct {
 	Body                types.String `tfsdk:"body"`
 	SkipIfRunning       types.Bool   `tfsdk:"skip_if_running"`
 	Tags                types.Set    `tfsdk:"tags"`
+	Key                 types.String `tfsdk:"key"`
 	// Computed
 	Status     types.String `tfsdk:"status"`
 	NextFireAt types.String `tfsdk:"next_fire_at"`
@@ -150,6 +151,15 @@ func (r *HTTPJobResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				ElementType:         types.StringType,
 				Default:             setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
 				MarkdownDescription: "Set of tag IDs to attach to this job. Use `steadycron_tag` resources and reference their `id`.",
+			},
+			"key": schema.StringAttribute{
+				Optional: true,
+				Computed: true,
+				MarkdownDescription: "Stable monitor key referenced by code-monitoring SDKs.\n\n" +
+					"When set, this exact string is stored as `manifest_key` on the job. When omitted, the server " +
+					"auto-generates a slug from the job name (visible after apply).\n\n" +
+					"Changing `key` is an in-place update — no replacement occurs, but any in-code references using " +
+					"the old key must be updated. Must be unique within the account.",
 			},
 			// Computed-only
 			"status": schema.StringAttribute{
@@ -386,6 +396,11 @@ func httpJobModelToRequest(ctx context.Context, m httpJobModel) (client.UpsertJo
 	diags.Append(m.Tags.ElementsAs(ctx, &tags, false)...)
 	req.Tags = tags
 
+	if !m.Key.IsNull() && !m.Key.IsUnknown() {
+		v := m.Key.ValueString()
+		req.ManifestKey = &v
+	}
+
 	return req, diags
 }
 
@@ -457,6 +472,12 @@ func httpJobResponseToModel(ctx context.Context, job *client.JobResponse, m *htt
 	m.LastFireAt = types.StringPointerValue(job.LastFireAt)
 	m.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
 	m.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
+
+	if job.ManifestKey != nil {
+		m.Key = types.StringValue(*job.ManifestKey)
+	} else {
+		m.Key = types.StringNull()
+	}
 
 	return diags
 }

@@ -53,6 +53,7 @@ func (d *HTTPJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				ElementType: types.StringType,
 			},
+			"key":         schema.StringAttribute{Computed: true, MarkdownDescription: "Stable monitor key used by code-monitoring SDKs (`manifest_key` on the server)."},
 			"status":      schema.StringAttribute{Computed: true},
 			"next_fire_at": schema.StringAttribute{Computed: true},
 			"last_fire_at": schema.StringAttribute{Computed: true},
@@ -92,6 +93,7 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		Body                types.String `tfsdk:"body"`
 		SkipIfRunning       types.Bool   `tfsdk:"skip_if_running"`
 		Tags                types.Set    `tfsdk:"tags"`
+		Key                 types.String `tfsdk:"key"`
 		Status              types.String `tfsdk:"status"`
 		NextFireAt          types.String `tfsdk:"next_fire_at"`
 		LastFireAt          types.String `tfsdk:"last_fire_at"`
@@ -163,6 +165,12 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	tv, d2 := types.SetValue(types.StringType, tagElems)
 	resp.Diagnostics.Append(d2...)
 	config.Tags = tv
+
+	if job.ManifestKey != nil {
+		config.Key = types.StringValue(*job.ManifestKey)
+	} else {
+		config.Key = types.StringNull()
+	}
 
 	config.Status = types.StringPointerValue(job.Status)
 	config.NextFireAt = types.StringPointerValue(job.NextFireAt)

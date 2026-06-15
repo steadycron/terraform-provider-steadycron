@@ -148,6 +148,30 @@ Resources created via Terraform have a null `manifest_namespace`, so they are **
 `steadycron sync --prune`. Manage a resource via Terraform **or** via the CLI/manifest, not both —
 mixing tools for the same resource is unsupported.
 
+## Code-monitoring SDK integration
+
+Both job resources expose a `key` attribute that maps to `manifest_key` on the server. Set it to the
+stable string your code references:
+
+```hcl
+resource "steadycron_heartbeat_monitor" "db_backup" {
+  name = "Nightly DB backup"
+  key  = "nightly-db-backup"   # ← paste this into @steadycron.job("…") or TrackAsync("…")
+  cron_expression = "0 2 * * *"
+  grace_seconds   = 1800
+}
+
+output "db_backup_key" {
+  value = steadycron_heartbeat_monitor.db_backup.key
+}
+```
+
+**Rules:**
+- `key` must be unique within the account. A duplicate produces a clear plan/apply error naming the conflicting key.
+- When omitted, the server generates a slug from `name` (visible after `terraform apply`).
+- Renaming `key` is an in-place update — no replacement occurs, but any in-code references must be updated.
+- The SDK resolves the ping token from the key at runtime using `STEADYCRON_API_KEY` (read-only scope is sufficient).
+
 ## Importing existing resources
 
 ```bash
