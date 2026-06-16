@@ -39,6 +39,7 @@ func (d *HeartbeatMonitorDataSource) Schema(_ context.Context, _ datasource.Sche
 			"grace_seconds":            schema.Int64Attribute{Computed: true},
 			"stuck_run_detection":      schema.BoolAttribute{Computed: true},
 			"max_run_duration_seconds": schema.Int64Attribute{Computed: true},
+			"misfire_policy":           schema.StringAttribute{Computed: true, MarkdownDescription: "Misfire policy: `do_nothing` or `fire_once_now`."},
 			"tags": schema.SetAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
@@ -76,6 +77,7 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		GraceSeconds          types.Int64  `tfsdk:"grace_seconds"`
 		StuckRunDetection     types.Bool   `tfsdk:"stuck_run_detection"`
 		MaxRunDurationSeconds types.Int64  `tfsdk:"max_run_duration_seconds"`
+		MisfirePolicy         types.String `tfsdk:"misfire_policy"`
 		Tags                  types.Set    `tfsdk:"tags"`
 		PingURL               types.String `tfsdk:"ping_url"`
 		Token                 types.String `tfsdk:"token"`
@@ -135,6 +137,12 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		config.Key = types.StringValue(*job.JobKey)
 	} else {
 		config.Key = types.StringNull()
+	}
+
+	if job.MisfirePolicy != "" {
+		config.MisfirePolicy = types.StringValue(job.MisfirePolicy)
+	} else {
+		config.MisfirePolicy = types.StringValue("do_nothing")
 	}
 
 	config.Status = types.StringPointerValue(job.Status)

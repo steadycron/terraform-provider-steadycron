@@ -147,11 +147,20 @@ func min(a, b time.Duration) time.Duration {
 // ─── Jobs ────────────────────────────────────────────────────────────────────
 
 func (c *Client) ListJobs(ctx context.Context) ([]JobResponse, error) {
-	var out jobListResponse
-	if err := c.do(ctx, http.MethodGet, "/api/jobs?page=1&pageSize=100", nil, &out); err != nil {
-		return nil, err
+	const pageSize = 100
+	var all []JobResponse
+	for page := 1; ; page++ {
+		var out jobListResponse
+		path := fmt.Sprintf("/api/jobs?page=%d&pageSize=%d", page, pageSize)
+		if err := c.do(ctx, http.MethodGet, path, nil, &out); err != nil {
+			return nil, err
+		}
+		all = append(all, out.Items...)
+		if len(all) >= out.TotalCount || len(out.Items) == 0 {
+			break
+		}
 	}
-	return out.Items, nil
+	return all, nil
 }
 
 func (c *Client) CreateJob(ctx context.Context, req UpsertJobRequest) (*JobResponse, error) {
@@ -331,14 +340,6 @@ func (c *Client) FindAlertRuleByID(ctx context.Context, ruleID string) (*AlertRu
 		}
 	}
 	return nil, &APIError{StatusCode: http.StatusNotFound, Code: "not_found", Message: "alert rule not found"}
-}
-
-func (c *Client) UpdateAlertRule(ctx context.Context, jobID, ruleID string, req UpsertAlertRuleRequest) (*AlertRuleResponse, error) {
-	var out AlertRuleResponse
-	if err := c.do(ctx, http.MethodPatch, "/api/jobs/"+jobID+"/alert-rules/"+ruleID, req, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
 }
 
 func (c *Client) DeleteAlertRule(ctx context.Context, ruleID string) error {

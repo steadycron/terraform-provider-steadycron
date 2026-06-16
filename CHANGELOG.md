@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-06-16
+
+### Added
+- `misfire_policy` attribute on `steadycron_http_job` and `steadycron_heartbeat_monitor` resources and data sources — controls what happens when a scheduled fire is missed (`do_nothing` skips it; `fire_once_now` fires once immediately). Defaults to `do_nothing`.
+
+### Fixed
+- Alert rule updates no longer silently 404: the backend has no PATCH alert-rule endpoint, so all mutable attributes (`job_id`, `channel_id`, `trigger`, `severity`, `dedup_window_seconds`, `threshold`, `param_factor`, `param_min_baseline_samples`) now carry `RequiresReplace`. Any change destroys and recreates the rule instead of calling a missing endpoint.
+- `ListJobs` now fetches all pages instead of silently capping at 100 jobs. This also fixes `terraform import` for alert rules on accounts with more than 100 jobs.
+
 ## [1.0.5] - 2026-06-16
 
 ### Added

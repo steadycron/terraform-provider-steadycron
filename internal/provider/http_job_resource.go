@@ -48,6 +48,7 @@ type httpJobModel struct {
 	Headers             types.Map    `tfsdk:"headers"`
 	Body                types.String `tfsdk:"body"`
 	SkipIfRunning       types.Bool   `tfsdk:"skip_if_running"`
+	MisfirePolicy       types.String `tfsdk:"misfire_policy"`
 	Tags                types.Set    `tfsdk:"tags"`
 	Key                 types.String `tfsdk:"key"`
 	// Computed
@@ -144,6 +145,15 @@ func (r *HTTPJobResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 				MarkdownDescription: "Skip the scheduled fire if a previous execution is still running. Defaults to `false`.",
+			},
+			"misfire_policy": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("do_nothing"),
+				MarkdownDescription: "What to do when a scheduled fire is missed (e.g. the scheduler was down). `do_nothing` skips the missed fire; `fire_once_now` executes once immediately. Defaults to `do_nothing`.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("do_nothing", "fire_once_now"),
+				},
 			},
 			"tags": schema.SetAttribute{
 				Optional:            true,
@@ -401,6 +411,11 @@ func httpJobModelToRequest(ctx context.Context, m httpJobModel) (client.UpsertJo
 		req.JobKey = &v
 	}
 
+	if !m.MisfirePolicy.IsNull() && !m.MisfirePolicy.IsUnknown() {
+		v := m.MisfirePolicy.ValueString()
+		req.MisfirePolicy = &v
+	}
+
 	return req, diags
 }
 
@@ -477,6 +492,12 @@ func httpJobResponseToModel(ctx context.Context, job *client.JobResponse, m *htt
 		m.Key = types.StringValue(*job.JobKey)
 	} else {
 		m.Key = types.StringNull()
+	}
+
+	if job.MisfirePolicy != "" {
+		m.MisfirePolicy = types.StringValue(job.MisfirePolicy)
+	} else {
+		m.MisfirePolicy = types.StringValue("do_nothing")
 	}
 
 	return diags

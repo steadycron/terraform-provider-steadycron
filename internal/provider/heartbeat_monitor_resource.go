@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/steadycron/terraform-provider-steadycron/internal/client"
 )
@@ -41,6 +43,7 @@ type heartbeatMonitorModel struct {
 	GraceSeconds          types.Int64  `tfsdk:"grace_seconds"`
 	StuckRunDetection     types.Bool   `tfsdk:"stuck_run_detection"`
 	MaxRunDurationSeconds types.Int64  `tfsdk:"max_run_duration_seconds"`
+	MisfirePolicy         types.String `tfsdk:"misfire_policy"`
 	Tags                  types.Set    `tfsdk:"tags"`
 	Key                   types.String `tfsdk:"key"`
 	// Computed
@@ -108,6 +111,15 @@ func (r *HeartbeatMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 				Computed:            true,
 				Default:             int64default.StaticInt64(120),
 				MarkdownDescription: "Maximum expected run duration in seconds (used by stuck-run detection). Defaults to `120`.",
+			},
+			"misfire_policy": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("do_nothing"),
+				MarkdownDescription: "What to do when a scheduled ping is missed (e.g. the scheduler was down). `do_nothing` skips the missed fire; `fire_once_now` fires once immediately. Defaults to `do_nothing`.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("do_nothing", "fire_once_now"),
+				},
 			},
 			"tags": schema.SetAttribute{
 				Optional:            true,
@@ -383,6 +395,11 @@ func heartbeatModelToRequest(ctx context.Context, m heartbeatMonitorModel) (clie
 		req.JobKey = &v
 	}
 
+	if !m.MisfirePolicy.IsNull() && !m.MisfirePolicy.IsUnknown() {
+		v := m.MisfirePolicy.ValueString()
+		req.MisfirePolicy = &v
+	}
+
 	return req, diags
 }
 
@@ -429,6 +446,12 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 		m.Key = types.StringValue(*job.JobKey)
 	} else {
 		m.Key = types.StringNull()
+	}
+
+	if job.MisfirePolicy != "" {
+		m.MisfirePolicy = types.StringValue(job.MisfirePolicy)
+	} else {
+		m.MisfirePolicy = types.StringValue("do_nothing")
 	}
 
 	tagElems := make([]attr.Value, len(job.Tags))

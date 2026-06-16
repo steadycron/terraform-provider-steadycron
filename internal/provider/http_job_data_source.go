@@ -49,6 +49,7 @@ func (d *HTTPJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"body":            schema.StringAttribute{Computed: true},
 			"skip_if_running": schema.BoolAttribute{Computed: true},
+			"misfire_policy":  schema.StringAttribute{Computed: true, MarkdownDescription: "Misfire policy: `do_nothing` or `fire_once_now`."},
 			"tags": schema.SetAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
@@ -92,6 +93,7 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		Headers             types.Map    `tfsdk:"headers"`
 		Body                types.String `tfsdk:"body"`
 		SkipIfRunning       types.Bool   `tfsdk:"skip_if_running"`
+		MisfirePolicy       types.String `tfsdk:"misfire_policy"`
 		Tags                types.Set    `tfsdk:"tags"`
 		Key                 types.String `tfsdk:"key"`
 		Status              types.String `tfsdk:"status"`
@@ -170,6 +172,12 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		config.Key = types.StringValue(*job.JobKey)
 	} else {
 		config.Key = types.StringNull()
+	}
+
+	if job.MisfirePolicy != "" {
+		config.MisfirePolicy = types.StringValue(job.MisfirePolicy)
+	} else {
+		config.MisfirePolicy = types.StringValue("do_nothing")
 	}
 
 	config.Status = types.StringPointerValue(job.Status)

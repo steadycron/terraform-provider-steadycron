@@ -7,7 +7,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -59,14 +61,17 @@ func (r *AlertRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"job_id": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "UUID of the job this rule applies to.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"channel_id": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "UUID of the alert channel to deliver to.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"trigger": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Alert trigger. One of: `on_failure`, `on_n_consecutive`, `on_missed_heartbeat`, `on_recovery`, `on_slow_run`, `on_size_anomaly`.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"on_failure",
@@ -81,12 +86,14 @@ func (r *AlertRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"threshold": schema.Int64Attribute{
 				Optional:            true,
 				MarkdownDescription: "Consecutive failure count. Required when `trigger = \"on_n_consecutive\"`; ignored otherwise.",
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 			},
 			"severity": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString("P2"),
 				MarkdownDescription: "Alert severity. One of: `P1`, `P2`, `P3`. `P1` bypasses quiet hours. Defaults to `P2`.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
 					stringvalidator.OneOf("P1", "P2", "P3"),
 				},
@@ -96,14 +103,17 @@ func (r *AlertRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Computed:            true,
 				Default:             int64default.StaticInt64(300),
 				MarkdownDescription: "Deduplication window in seconds. Defaults to `300` (5 minutes).",
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 			},
 			"param_factor": schema.Float64Attribute{
 				Optional:            true,
 				MarkdownDescription: "Anomaly factor (for `on_slow_run` / `on_size_anomaly`). Multiplier above the baseline that triggers the alert.",
+				PlanModifiers:       []planmodifier.Float64{float64planmodifier.RequiresReplace()},
 			},
 			"param_min_baseline_samples": schema.Int64Attribute{
 				Optional:            true,
 				MarkdownDescription: "Minimum baseline samples required before anomaly detection fires (for `on_slow_run` / `on_size_anomaly`).",
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 			},
 			"created_at": schema.StringAttribute{
 				Computed:            true,
@@ -169,31 +179,13 @@ func (r *AlertRuleResource) Read(ctx context.Context, req resource.ReadRequest, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *AlertRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan alertRuleModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	var state alertRuleModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if err := validateAlertRule(plan); err != nil {
-		resp.Diagnostics.AddError("Invalid alert rule", err.Error())
-		return
-	}
-
-	rule, err := r.client.UpdateAlertRule(ctx, state.JobID.ValueString(), state.ID.ValueString(), ruleModelToRequest(plan))
-	if err != nil {
-		appendAPIError(&resp.Diagnostics, "updating alert rule", err)
-		return
-	}
-
-	ruleResponseToModel(rule, &plan)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+// Update is never called because every mutable attribute has RequiresReplace — any change
+// forces destroy+create. The backend has no PATCH alert-rule endpoint.
+func (r *AlertRuleResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	resp.Diagnostics.AddError(
+		"Alert rule update not supported",
+		"All alert rule attributes require replacement on change. This Update path should never be reached — please report this as a provider bug.",
+	)
 }
 
 func (r *AlertRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

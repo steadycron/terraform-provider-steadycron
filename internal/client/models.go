@@ -19,6 +19,9 @@ type UpsertJobRequest struct {
 	StuckRunDetection     *bool  `json:"stuck_run_detection,omitempty"`
 	MaxRunDurationSeconds *int64 `json:"max_run_duration_seconds,omitempty"`
 
+	// Schedule misfire behaviour: "do_nothing" (default) | "fire_once_now"
+	MisfirePolicy *string `json:"misfire_policy,omitempty"`
+
 	// HTTP-specific
 	Method              string            `json:"http_method,omitempty"`
 	URL                 string            `json:"http_url,omitempty"`
@@ -90,7 +93,8 @@ type JobResponse struct {
 	CreatedAt  string       `json:"created_at"`
 	UpdatedAt  string       `json:"updated_at"`
 
-	JobKey *string `json:"job_key"`
+	JobKey        *string `json:"job_key"`
+	MisfirePolicy string  `json:"misfire_policy"`
 }
 
 // ─── Tag ─────────────────────────────────────────────────────────────────────
