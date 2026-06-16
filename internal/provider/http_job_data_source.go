@@ -53,7 +53,7 @@ func (d *HTTPJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				ElementType: types.StringType,
 			},
-			"key":         schema.StringAttribute{Computed: true, MarkdownDescription: "Stable monitor key used by code-monitoring SDKs (`manifest_key` on the server)."},
+			"key":         schema.StringAttribute{Computed: true, MarkdownDescription: "Stable job key used by code-monitoring SDKs."},
 			"status":      schema.StringAttribute{Computed: true},
 			"next_fire_at": schema.StringAttribute{Computed: true},
 			"last_fire_at": schema.StringAttribute{Computed: true},
@@ -166,8 +166,8 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.Diagnostics.Append(d2...)
 	config.Tags = tv
 
-	if job.ManifestKey != nil {
-		config.Key = types.StringValue(*job.ManifestKey)
+	if job.JobKey != nil {
+		config.Key = types.StringValue(*job.JobKey)
 	} else {
 		config.Key = types.StringNull()
 	}

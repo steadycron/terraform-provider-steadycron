@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-06-16
+
+### Added
+- `key` attribute on `steadycron_http_job` and `steadycron_heartbeat_monitor` resources — optional, computed stable job key referenced by code-monitoring SDKs (e.g. `@steadycron.job("my-key")`). When omitted, the server auto-generates a slug from the job name.
+- `key` attribute on `data.steadycron_http_job` and `data.steadycron_heartbeat_monitor` data sources (read-only).
+
 ## [1.0.4] - 2026-06-14
 
 ### Fixed

@@ -38,7 +38,7 @@ output "ping_url" {
 # .NET:
 #   await monitor.TrackAsync("nightly-db-backup", async ct => { ... }, ct);
 
-output "monitor_key" {
+output "job_key" {
   value       = steadycron_heartbeat_monitor.nightly_backup.key
   description = "Paste this value into @steadycron.job(\"…\") or TrackAsync(\"…\")."
 }

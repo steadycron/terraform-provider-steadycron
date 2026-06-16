@@ -9,7 +9,7 @@ type UpsertJobRequest struct {
 	Description string `json:"description,omitempty"`
 
 	// Schedule — exactly one must be set.
-	ScheduleKind    string `json:"schedule_kind"`        // "cron" | "interval"
+	ScheduleKind    string `json:"schedule_kind"` // "cron" | "interval"
 	CronExpression  string `json:"cron_expression,omitempty"`
 	IntervalSeconds *int64 `json:"interval_seconds,omitempty"`
 	Timezone        string `json:"timezone,omitempty"`
@@ -32,9 +32,9 @@ type UpsertJobRequest struct {
 	// Tags — list of tag UUIDs.
 	Tags []string `json:"tags,omitempty"`
 
-	// ManifestKey is the stable human-authored key used by code-monitoring SDKs.
+	// JobKey is the stable human-authored key used by code-monitoring SDKs.
 	// Optional: when omitted, the server auto-generates a slug from the job name.
-	ManifestKey *string `json:"manifest_key,omitempty"`
+	JobKey *string `json:"job_key,omitempty"`
 }
 
 // PingUrls holds the three heartbeat ping endpoints.
@@ -90,9 +90,7 @@ type JobResponse struct {
 	CreatedAt  string       `json:"created_at"`
 	UpdatedAt  string       `json:"updated_at"`
 
-	// ManifestKey is the stable human-authored key used by code-monitoring SDKs.
-	// Null when not yet set (e.g. legacy jobs created before SPEC-18).
-	ManifestKey *string `json:"manifest_key"`
+	JobKey *string `json:"job_key"`
 }
 
 // ─── Tag ─────────────────────────────────────────────────────────────────────
@@ -132,10 +130,10 @@ type AlertChannelResponse struct {
 // ─── Alert Rule ──────────────────────────────────────────────────────────────
 
 type UpsertAlertRuleRequest struct {
-	ChannelID          string  `json:"channel_id"`
-	Trigger            string  `json:"trigger"`
-	Severity           string  `json:"severity,omitempty"`
-	DedupWindowSeconds *int64  `json:"dedup_window_seconds,omitempty"`
+	ChannelID          string `json:"channel_id"`
+	Trigger            string `json:"trigger"`
+	Severity           string `json:"severity,omitempty"`
+	DedupWindowSeconds *int64 `json:"dedup_window_seconds,omitempty"`
 	// Threshold is required for on_n_consecutive; sent as a top-level field (not in params).
 	Threshold *int64  `json:"threshold,omitempty"`
 	Params    *Params `json:"params,omitempty"`
@@ -147,12 +145,12 @@ type Params struct {
 }
 
 type AlertRuleResponse struct {
-	ID                 string  `json:"id"`
-	JobID              string  `json:"job_id"`
-	ChannelID          string  `json:"channel_id"`
-	Trigger            string  `json:"trigger"`
-	Severity           string  `json:"severity"`
-	DedupWindowSeconds int64   `json:"dedup_window_seconds"`
+	ID                 string `json:"id"`
+	JobID              string `json:"job_id"`
+	ChannelID          string `json:"channel_id"`
+	Trigger            string `json:"trigger"`
+	Severity           string `json:"severity"`
+	DedupWindowSeconds int64  `json:"dedup_window_seconds"`
 	// Threshold is the consecutive-failure count for on_n_consecutive rules.
 	Threshold *int64  `json:"threshold"`
 	Params    *Params `json:"params"`

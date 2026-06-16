@@ -119,8 +119,8 @@ func (r *HeartbeatMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 			"key": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
-				MarkdownDescription: "Stable monitor key referenced by code-monitoring SDKs (e.g. `@steadycron.job(\"my-key\")`).\n\n" +
-					"When set, this exact string is stored as `manifest_key` on the job. When omitted, the server " +
+				MarkdownDescription: "Stable job key referenced by code-monitoring SDKs (e.g. `@steadycron.job(\"my-key\")`).\n\n" +
+					"When set, this exact string is used as the job key. When omitted, the server " +
 					"auto-generates a slug from the job name (visible after apply).\n\n" +
 					"Changing `key` is an in-place update — no replacement occurs, but any in-code references using " +
 					"the old key must be updated. Must be unique within the account.",
@@ -380,7 +380,7 @@ func heartbeatModelToRequest(ctx context.Context, m heartbeatMonitorModel) (clie
 
 	if !m.Key.IsNull() && !m.Key.IsUnknown() {
 		v := m.Key.ValueString()
-		req.ManifestKey = &v
+		req.JobKey = &v
 	}
 
 	return req, diags
@@ -425,8 +425,8 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 	m.CreatedAt = types.StringValue(normalizeTimestamp(job.CreatedAt))
 	m.UpdatedAt = types.StringValue(normalizeTimestamp(job.UpdatedAt))
 
-	if job.ManifestKey != nil {
-		m.Key = types.StringValue(*job.ManifestKey)
+	if job.JobKey != nil {
+		m.Key = types.StringValue(*job.JobKey)
 	} else {
 		m.Key = types.StringNull()
 	}

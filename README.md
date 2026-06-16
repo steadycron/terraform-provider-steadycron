@@ -150,7 +150,7 @@ mixing tools for the same resource is unsupported.
 
 ## Code-monitoring SDK integration
 
-Both job resources expose a `key` attribute that maps to `manifest_key` on the server. Set it to the
+Both job resources expose a `key` attribute (the stable `job_key` identifier). Set it to the
 stable string your code references:
 
 ```hcl

@@ -45,7 +45,7 @@ func (d *HeartbeatMonitorDataSource) Schema(_ context.Context, _ datasource.Sche
 			},
 			"ping_url":   schema.StringAttribute{Computed: true, Sensitive: true},
 			"token":      schema.StringAttribute{Computed: true, Sensitive: true},
-			"key":        schema.StringAttribute{Computed: true, MarkdownDescription: "Stable monitor key used by code-monitoring SDKs (`manifest_key` on the server)."},
+			"key":        schema.StringAttribute{Computed: true, MarkdownDescription: "Stable job key used by code-monitoring SDKs."},
 			"status":     schema.StringAttribute{Computed: true},
 			"created_at": schema.StringAttribute{Computed: true},
 			"updated_at": schema.StringAttribute{Computed: true},
@@ -131,8 +131,8 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		config.Token = types.StringNull()
 	}
 
-	if job.ManifestKey != nil {
-		config.Key = types.StringValue(*job.ManifestKey)
+	if job.JobKey != nil {
+		config.Key = types.StringValue(*job.JobKey)
 	} else {
 		config.Key = types.StringNull()
 	}
