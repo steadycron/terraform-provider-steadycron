@@ -4,9 +4,10 @@
 [![Registry](https://img.shields.io/badge/Terraform_Registry-steadycron%2Fsteadycron-blue)](https://registry.terraform.io/providers/steadycron/steadycron/latest)
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL_2.0-blue.svg)](LICENSE)
 
-The official Terraform provider for [SteadyCron](https://steadycron.com) — manage HTTP jobs,
-heartbeat monitors, alert channels, alert rules, tags, and template-variable names
-declaratively with `plan` / `apply` / `import`.
+The official Terraform provider for [SteadyCron](https://steadycron.com) — manage
+cron jobs, heartbeat monitors, alert channels, and alert rules as infrastructure as code
+alongside the rest of your Terraform stack. Declare schedules, alert routing, and
+monitoring configuration in HCL and keep them in sync with `plan` / `apply` / `import`.
 
 ## Requirements
 
@@ -148,10 +149,14 @@ Resources created via Terraform have a null `manifest_namespace`, so they are **
 `steadycron sync --prune`. Manage a resource via Terraform **or** via the CLI/manifest, not both —
 mixing tools for the same resource is unsupported.
 
+If your team already uses Terraform for infrastructure, the provider is the natural way to bring
+cron jobs under the same code review, state management, and deployment pipeline as the rest of
+your stack — no separate manifest files or CLI tooling required.
+
 ## Code-monitoring SDK integration
 
 Both job resources expose a `key` attribute (the stable `job_key` identifier). Set it to the
-stable string your code references:
+stable string your application code references:
 
 ```hcl
 resource "steadycron_heartbeat_monitor" "db_backup" {
@@ -171,6 +176,10 @@ output "db_backup_key" {
 - When omitted, the server generates a slug from `name` (visible after `terraform apply`).
 - Renaming `key` is an in-place update — no replacement occurs, but any in-code references must be updated.
 - The SDK resolves the ping token from the key at runtime using `STEADYCRON_API_KEY` (read-only scope is sufficient).
+
+Declaring the `key` in Terraform means your cron schedule, alert rules, and SDK instrumentation
+all live in the same configuration — the cron job itself and the code that monitors it are
+managed as code together.
 
 ## Importing existing resources
 
