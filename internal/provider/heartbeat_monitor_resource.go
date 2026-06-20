@@ -37,6 +37,8 @@ type heartbeatMonitorModel struct {
 	ID                    types.String `tfsdk:"id"`
 	Name                  types.String `tfsdk:"name"`
 	Description           types.String `tfsdk:"description"`
+	RunbookNotes          types.String `tfsdk:"runbook_notes"`
+	RunbookUrl            types.String `tfsdk:"runbook_url"`
 	CronExpression        types.String `tfsdk:"cron_expression"`
 	IntervalSeconds       types.Int64  `tfsdk:"interval_seconds"`
 	Timezone              types.String `tfsdk:"timezone"`
@@ -79,6 +81,14 @@ func (r *HeartbeatMonitorResource) Schema(_ context.Context, _ resource.SchemaRe
 				Computed:            true,
 				Default:             stringdefault.StaticString(""),
 				MarkdownDescription: "Optional free-text description.",
+			},
+			"runbook_notes": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Markdown remediation notes shown inline in failure alert notifications (Slack, Telegram, Email). Max 4000 characters.",
+			},
+			"runbook_url": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Optional link to an external runbook (e.g. Notion, Confluence). Max 2048 characters.",
 			},
 			"cron_expression": schema.StringAttribute{
 				Optional:            true,
@@ -377,6 +387,14 @@ func heartbeatModelToRequest(ctx context.Context, m heartbeatMonitorModel) (clie
 		StuckRunDetection:     boolPtr(m.StuckRunDetection.ValueBool()),
 		MaxRunDurationSeconds: int64Ptr(m.MaxRunDurationSeconds.ValueInt64()),
 	}
+	if !m.RunbookNotes.IsNull() && !m.RunbookNotes.IsUnknown() {
+		v := m.RunbookNotes.ValueString()
+		req.RunbookNotes = &v
+	}
+	if !m.RunbookUrl.IsNull() && !m.RunbookUrl.IsUnknown() {
+		v := m.RunbookUrl.ValueString()
+		req.RunbookUrl = &v
+	}
 	if !m.CronExpression.IsNull() && !m.CronExpression.IsUnknown() {
 		req.ScheduleKind = "cron"
 		req.CronExpression = m.CronExpression.ValueString()
@@ -409,6 +427,8 @@ func heartbeatResponseToModel(ctx context.Context, job *client.JobResponse, m *h
 	m.ID = types.StringValue(job.ID)
 	m.Name = types.StringValue(job.Name)
 	m.Description = types.StringValue(stringPtrOrEmpty(job.Description))
+	m.RunbookNotes = types.StringPointerValue(job.RunbookNotes)
+	m.RunbookUrl = types.StringPointerValue(job.RunbookUrl)
 	m.Timezone = types.StringValue(job.Timezone)
 	m.GraceSeconds = types.Int64Value(job.GraceSeconds)
 	m.StuckRunDetection = types.BoolValue(job.StuckRunDetection)

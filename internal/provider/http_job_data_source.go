@@ -35,6 +35,8 @@ func (d *HTTPJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"name":                  schema.StringAttribute{Computed: true},
 			"description":           schema.StringAttribute{Computed: true},
+			"runbook_notes":         schema.StringAttribute{Computed: true},
+			"runbook_url":           schema.StringAttribute{Computed: true},
 			"method":                schema.StringAttribute{Computed: true},
 			"url":                   schema.StringAttribute{Computed: true},
 			"cron_expression":       schema.StringAttribute{Computed: true},
@@ -54,12 +56,12 @@ func (d *HTTPJobDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				ElementType: types.StringType,
 			},
-			"key":         schema.StringAttribute{Computed: true, MarkdownDescription: "Stable job key used by code-monitoring SDKs."},
-			"status":      schema.StringAttribute{Computed: true},
+			"key":          schema.StringAttribute{Computed: true, MarkdownDescription: "Stable job key used by code-monitoring SDKs."},
+			"status":       schema.StringAttribute{Computed: true},
 			"next_fire_at": schema.StringAttribute{Computed: true},
 			"last_fire_at": schema.StringAttribute{Computed: true},
-			"created_at":  schema.StringAttribute{Computed: true},
-			"updated_at":  schema.StringAttribute{Computed: true},
+			"created_at":   schema.StringAttribute{Computed: true},
+			"updated_at":   schema.StringAttribute{Computed: true},
 		},
 	}
 }
@@ -82,6 +84,8 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		// other fields will be populated
 		Name                types.String `tfsdk:"name"`
 		Description         types.String `tfsdk:"description"`
+		RunbookNotes        types.String `tfsdk:"runbook_notes"`
+		RunbookUrl          types.String `tfsdk:"runbook_url"`
 		Method              types.String `tfsdk:"method"`
 		URL                 types.String `tfsdk:"url"`
 		CronExpression      types.String `tfsdk:"cron_expression"`
@@ -123,6 +127,8 @@ func (d *HTTPJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	config.Name = types.StringValue(job.Name)
 	config.Description = types.StringPointerValue(job.Description)
+	config.RunbookNotes = types.StringPointerValue(job.RunbookNotes)
+	config.RunbookUrl = types.StringPointerValue(job.RunbookUrl)
 	config.Timezone = types.StringValue(job.Timezone)
 	config.SkipIfRunning = types.BoolValue(job.SkipIfRunning)
 

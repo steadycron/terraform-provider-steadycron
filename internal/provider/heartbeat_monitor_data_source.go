@@ -33,6 +33,8 @@ func (d *HeartbeatMonitorDataSource) Schema(_ context.Context, _ datasource.Sche
 			"id":                       schema.StringAttribute{Required: true},
 			"name":                     schema.StringAttribute{Computed: true},
 			"description":              schema.StringAttribute{Computed: true},
+			"runbook_notes":            schema.StringAttribute{Computed: true},
+			"runbook_url":              schema.StringAttribute{Computed: true},
 			"cron_expression":          schema.StringAttribute{Computed: true},
 			"interval_seconds":         schema.Int64Attribute{Computed: true},
 			"timezone":                 schema.StringAttribute{Computed: true},
@@ -71,6 +73,8 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 		ID                    types.String `tfsdk:"id"`
 		Name                  types.String `tfsdk:"name"`
 		Description           types.String `tfsdk:"description"`
+		RunbookNotes          types.String `tfsdk:"runbook_notes"`
+		RunbookUrl            types.String `tfsdk:"runbook_url"`
 		CronExpression        types.String `tfsdk:"cron_expression"`
 		IntervalSeconds       types.Int64  `tfsdk:"interval_seconds"`
 		Timezone              types.String `tfsdk:"timezone"`
@@ -107,6 +111,8 @@ func (d *HeartbeatMonitorDataSource) Read(ctx context.Context, req datasource.Re
 
 	config.Name = types.StringValue(job.Name)
 	config.Description = types.StringPointerValue(job.Description)
+	config.RunbookNotes = types.StringPointerValue(job.RunbookNotes)
+	config.RunbookUrl = types.StringPointerValue(job.RunbookUrl)
 	config.Timezone = types.StringValue(job.Timezone)
 	config.GraceSeconds = types.Int64Value(job.GraceSeconds)
 	config.StuckRunDetection = types.BoolValue(job.StuckRunDetection)

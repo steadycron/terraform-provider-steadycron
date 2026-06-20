@@ -8,6 +8,10 @@ type UpsertJobRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 
+	// Optional remediation runbook shown inline in failure alert notifications.
+	RunbookNotes *string `json:"runbook_notes,omitempty"`
+	RunbookUrl   *string `json:"runbook_url,omitempty"`
+
 	// Schedule — exactly one must be set.
 	ScheduleKind    string `json:"schedule_kind"` // "cron" | "interval"
 	CronExpression  string `json:"cron_expression,omitempty"`
@@ -62,6 +66,10 @@ type JobResponse struct {
 	Kind        string  `json:"kind"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
+
+	// Optional remediation runbook shown inline in failure alert notifications.
+	RunbookNotes *string `json:"runbook_notes"`
+	RunbookUrl   *string `json:"runbook_url"`
 
 	ScheduleKind    string  `json:"schedule_kind"`
 	CronExpression  *string `json:"cron_expression"`
