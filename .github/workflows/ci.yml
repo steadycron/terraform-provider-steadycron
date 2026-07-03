@@ -46,11 +46,8 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install tfplugindocs
-        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
-
       - name: Generate docs
-        run: tfplugindocs generate --provider-name steadycron
+        run: go generate ./...
 
       - name: Check for uncommitted doc changes
         run: |
