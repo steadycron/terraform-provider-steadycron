@@ -1,4 +1,4 @@
-# Terraform Provider for SteadyCron
+# Terraform Provider for [SteadyCron](https://steadycron.com)
 
 [![CI](https://github.com/steadycron/terraform-provider-steadycron/actions/workflows/ci.yml/badge.svg)](https://github.com/steadycron/terraform-provider-steadycron/actions/workflows/ci.yml)
 [![Registry](https://img.shields.io/badge/Terraform_Registry-steadycron%2Fsteadycron-blue)](https://registry.terraform.io/providers/steadycron/steadycron/latest)

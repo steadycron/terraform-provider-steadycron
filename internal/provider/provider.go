@@ -40,8 +40,10 @@ func (p *SteadyCronProvider) Metadata(_ context.Context, _ provider.MetadataRequ
 
 func (p *SteadyCronProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "The SteadyCron provider manages HTTP jobs, heartbeat monitors, alert channels, " +
-			"alert rules, tags, and template-variable names via the SteadyCron REST API.\n\n" +
+		MarkdownDescription: "[SteadyCron](https://steadycron.com) is cron job scheduling and monitoring, as code. " +
+			"This provider manages HTTP jobs, heartbeat monitors, alert channels, alert rules, tags, and " +
+			"template-variable names via the SteadyCron REST API — see the " +
+			"[Terraform guide](https://steadycron.com/docs/terraform) for a full walkthrough.\n\n" +
 			"A **Full**-scope API key is required for write operations; a **Read-only** key suffices for data sources.\n\n" +
 			"Per-key rate limit is 120 req/min. The provider retries 429 responses automatically.",
 		Attributes: map[string]schema.Attribute{
