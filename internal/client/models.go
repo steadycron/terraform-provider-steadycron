@@ -4,7 +4,7 @@ package client
 
 // UpsertJobRequest is used for both POST /api/jobs and PATCH /api/jobs/{id}.
 type UpsertJobRequest struct {
-	Kind        string `json:"kind"` // "http" | "heartbeat"
+	Kind        string `json:"kind"` // "http" | "heartbeat" | "agent"
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 
@@ -18,10 +18,30 @@ type UpsertJobRequest struct {
 	IntervalSeconds *int64 `json:"interval_seconds,omitempty"`
 	Timezone        string `json:"timezone,omitempty"`
 
-	// Heartbeat-specific
+	// Ping-driven kinds (heartbeat and agent monitors)
 	GraceSeconds          *int64 `json:"grace_seconds,omitempty"`
 	StuckRunDetection     *bool  `json:"stuck_run_detection,omitempty"`
 	MaxRunDurationSeconds *int64 `json:"max_run_duration_seconds,omitempty"`
+
+	// Agent-monitor-specific. Cost ceilings are USD on the wire (micro-USD in the database).
+	//
+	// On PATCH the API reads a numeric ceiling as: omitted = unchanged, 0 = clear. Terraform
+	// always sends the full desired state, so the resource sends an explicit 0 for an attribute
+	// the practitioner removed — otherwise deleting the line from the config would be a no-op.
+	//
+	// ReportRequired and RuleEmptyResultEnabled are create-only: the API deliberately leaves
+	// them off UpdateJobRequest, so the resource marks both RequiresReplace.
+	// Every ceiling is a pointer so that an explicit 0 still serializes — `omitempty` on a
+	// pointer drops only nil, which is exactly the "leave it alone" case.
+	ReportRequired          *bool    `json:"report_required,omitempty"`
+	ItemsLabel              *string  `json:"items_label,omitempty"`
+	RuleEmptyResultEnabled  *bool    `json:"rule_empty_result_enabled,omitempty"`
+	RuleMaxCostUsdPerRun    *float64 `json:"rule_max_cost_usd_per_run,omitempty"`
+	RuleMaxCostUsdPerPeriod *float64 `json:"rule_max_cost_usd_per_period,omitempty"`
+	RuleCostPeriod          *string  `json:"rule_cost_period,omitempty"` // "day" | "month"
+	RuleMaxSteps            *int64   `json:"rule_max_steps,omitempty"`
+	RuleMaxToolCalls        *int64   `json:"rule_max_tool_calls,omitempty"`
+	RuleMaxDurationMs       *int64   `json:"rule_max_duration_ms,omitempty"`
 
 	// Schedule misfire behaviour: "do_nothing" (default) | "fire_once_now"
 	MisfirePolicy *string `json:"misfire_policy,omitempty"`
@@ -76,11 +96,23 @@ type JobResponse struct {
 	IntervalSeconds *int64  `json:"interval_seconds"`
 	Timezone        string  `json:"timezone"`
 
-	// Heartbeat-specific
+	// Ping-driven kinds (heartbeat and agent monitors)
 	GraceSeconds          int64     `json:"grace_seconds"`
 	StuckRunDetection     bool      `json:"stuck_run_detection"`
 	MaxRunDurationSeconds int64     `json:"max_run_duration_seconds"`
 	PingUrls              *PingUrls `json:"ping_urls"`
+
+	// Agent-monitor-specific. The API emits these only for agent monitors — they are null on
+	// every other kind, so surfacing them elsewhere would suggest they do something there.
+	ReportRequired          *bool    `json:"report_required"`
+	ItemsLabel              *string  `json:"items_label"`
+	RuleEmptyResultEnabled  *bool    `json:"rule_empty_result_enabled"`
+	RuleMaxCostUsdPerRun    *float64 `json:"rule_max_cost_usd_per_run"`
+	RuleMaxCostUsdPerPeriod *float64 `json:"rule_max_cost_usd_per_period"`
+	RuleCostPeriod          *string  `json:"rule_cost_period"`
+	RuleMaxSteps            *int64   `json:"rule_max_steps"`
+	RuleMaxToolCalls        *int64   `json:"rule_max_tool_calls"`
+	RuleMaxDurationMs       *int64   `json:"rule_max_duration_ms"`
 
 	// HTTP-specific
 	Method              *string           `json:"http_method"`

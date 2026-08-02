@@ -24,7 +24,7 @@ terraform {
   required_providers {
     steadycron = {
       source  = "steadycron/steadycron"
-      version = "1.0.4"
+      version = "1.1.0"
     }
   }
 }
@@ -80,12 +80,14 @@ The SteadyCron API allows **120 requests per minute per key**. The provider auto
 |---|---|
 | `steadycron_http_job` | Scheduled HTTPS call |
 | `steadycron_heartbeat_monitor` | Expected-ping monitor with a unique ping URL |
+| `steadycron_agent_monitor` | AI agent monitor — judges each run's reported output, cost, and step count |
 | `steadycron_alert_channel` | Delivery channel (email, Slack, Discord, webhook, Telegram) |
 | `steadycron_alert_rule` | Links a job to a channel with a trigger condition |
 | `steadycron_tag` | `key=value` label for grouping/filtering jobs |
 | `steadycron_template_variable` | Named placeholder for server-side substitution in job fields |
 | `data.steadycron_http_job` | Look up an HTTP job by ID |
 | `data.steadycron_heartbeat_monitor` | Look up a heartbeat monitor by ID |
+| `data.steadycron_agent_monitor` | Look up an agent monitor by ID |
 | `data.steadycron_tag` | Look up a tag by ID |
 | `data.steadycron_alert_channel` | Look up an alert channel by ID |
 
@@ -96,7 +98,7 @@ terraform {
   required_providers {
     steadycron = {
       source  = "steadycron/steadycron"
-      version = "1.0.4"
+      version = "1.1.0"
     }
   }
 }
@@ -143,6 +145,59 @@ resource "steadycron_alert_rule" "digest_failure" {
 }
 ```
 
+## Monitoring an AI agent
+
+`steadycron_agent_monitor` is a heartbeat that also reads what the run produced. Each run posts a
+small JSON report and SteadyCron judges it — so an agent that exits 0 having done nothing is a
+failure, not a green check.
+
+```hcl
+resource "steadycron_agent_monitor" "nightly_triage" {
+  name            = "nightly-ticket-triage"
+  cron_expression = "0 3 * * *"
+  timezone        = "Europe/Berlin"
+
+  # Two clocks: when the run must start, and how long it may then take.
+  grace_seconds            = 600
+  max_run_duration_seconds = 1800
+
+  items_label = "tickets"   # names itemsProduced everywhere; 0 produced = failure
+
+  rule_max_cost_usd_per_run    = 0.50
+  rule_max_cost_usd_per_period = 20
+  rule_cost_period             = "month"
+  rule_max_steps               = 40    # loop detection
+}
+
+resource "steadycron_alert_rule" "triage_empty" {
+  job_id     = steadycron_agent_monitor.nightly_triage.id
+  channel_id = steadycron_alert_channel.ops_email.id
+  trigger    = "on_empty_result"
+  severity   = "P1"
+}
+```
+
+A run is an **ordered pair** of calls — `/start` is mandatory, since without it there is nothing
+to time a hung run against:
+
+```bash
+curl "$START_PING_URL"                       # start_ping_url
+
+# … the agent does its work …
+
+curl -X POST "$PING_URL" \
+  -H 'Content-Type: application/json' \
+  -d '{"itemsProduced": 42, "model": "claude-opus-5", "costUsd": 0.84}'
+```
+
+Every report field is optional; `itemsProduced` is the one the empty-result rule reads. Agent
+monitors add four alert triggers — `on_empty_result`, `on_cost_exceeded`, `on_no_progress`, and
+`on_unverified_run` — and a missed run still fires `on_missed_heartbeat`.
+
+Two attributes force replacement rather than an in-place update, because the API accepts them on
+create only: `report_required` and `rule_empty_result_enabled`. `stuck_run_detection` is not
+exposed at all — the server forces it on for this kind.
+
 ## Cron-as-Code interoperability
 
 Resources created via Terraform have a null `manifest_namespace`, so they are **never pruned** by
@@ -155,7 +210,7 @@ your stack — no separate manifest files or CLI tooling required.
 
 ## Code-monitoring SDK integration
 
-Both job resources expose a `key` attribute (the stable `job_key` identifier). Set it to the
+All three job resources expose a `key` attribute (the stable `job_key` identifier). Set it to the
 stable string your application code references:
 
 ```hcl
@@ -186,6 +241,7 @@ managed as code together.
 ```bash
 terraform import steadycron_http_job.example <job_id>
 terraform import steadycron_heartbeat_monitor.db_backup <job_id>
+terraform import steadycron_agent_monitor.nightly_triage <job_id>
 terraform import steadycron_alert_channel.ops_email <channel_id>
 terraform import steadycron_alert_rule.digest_failure <rule_id>
 terraform import steadycron_tag.env_prod <tag_id>

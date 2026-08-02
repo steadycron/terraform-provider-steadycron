@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-02
+
+### Added
+- `steadycron_agent_monitor` resource and data source — SteadyCron's third job kind. Like a
+  heartbeat, but each run posts a JSON report that the server judges against per-monitor outcome
+  rules: `items_label` + `rule_empty_result_enabled` (a run producing nothing is a failure),
+  `rule_max_cost_usd_per_run` / `rule_max_cost_usd_per_period` + `rule_cost_period` (spend
+  ceilings in USD), `rule_max_steps` / `rule_max_tool_calls` (loop detection),
+  `rule_max_duration_ms`, and `report_required`.
+  - Exposes `start_ping_url`, `ping_url`, and `fail_ping_url`: an agent run is an ordered *pair*
+    of calls and `/start` is mandatory, so a single ping URL could not express the contract.
+  - `report_required` and `rule_empty_result_enabled` are `RequiresReplace` — the API accepts
+    both on create only.
+  - `stuck_run_detection` is deliberately not exposed: the server forces it true for this kind,
+    so an attribute for it would only produce permanent plan drift.
+  - Removing a ceiling from your configuration now clears it server-side (the API's documented
+    `0` sentinel) rather than silently leaving the old value in place.
+- Four agent alert triggers accepted by `steadycron_alert_rule`: `on_empty_result`,
+  `on_cost_exceeded`, `on_no_progress`, and `on_unverified_run`. A *missed* agent run continues
+  to fire `on_missed_heartbeat`.
+
 ## [1.0.8] - 2026-07-03
 
 ### Fixed

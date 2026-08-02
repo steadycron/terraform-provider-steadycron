@@ -82,6 +82,10 @@ resource "steadycron_alert_rule" "slow_run" {
 - `job_id` (String) UUID of the job this rule applies to.
 - `trigger` (String) Alert trigger. One of: `on_failure`, `on_n_consecutive`, `on_missed_heartbeat`, `on_recovery`, `on_slow_run`, `on_size_anomaly`.
 
+Agent monitors add four more, evaluated server-side against each run report: `on_empty_result` (the run produced nothing), `on_cost_exceeded` (a per-run or per-period spend ceiling was passed), `on_no_progress` (the step or tool-call ceiling was passed — a loop), and `on_unverified_run` (a success ping arrived with no report). `on_slow_run` is reused for an agent's duration ceiling.
+
+A missed agent run still fires `on_missed_heartbeat` — one transition, two vocabularies.
+
 ### Optional
 
 - `dedup_window_seconds` (Number) Deduplication window in seconds. Defaults to `300` (5 minutes).

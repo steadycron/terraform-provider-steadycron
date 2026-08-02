@@ -98,6 +98,7 @@ func (p *SteadyCronProvider) Resources(_ context.Context) []func() resource.Reso
 	return []func() resource.Resource{
 		NewHTTPJobResource,
 		NewHeartbeatMonitorResource,
+		NewAgentMonitorResource,
 		NewAlertChannelResource,
 		NewAlertRuleResource,
 		NewTagResource,
@@ -109,6 +110,7 @@ func (p *SteadyCronProvider) DataSources(_ context.Context) []func() datasource.
 	return []func() datasource.DataSource{
 		NewHTTPJobDataSource,
 		NewHeartbeatMonitorDataSource,
+		NewAgentMonitorDataSource,
 		NewTagDataSource,
 		NewAlertChannelDataSource,
 	}

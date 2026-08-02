@@ -69,9 +69,15 @@ func (r *AlertRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"trigger": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "Alert trigger. One of: `on_failure`, `on_n_consecutive`, `on_missed_heartbeat`, `on_recovery`, `on_slow_run`, `on_size_anomaly`.",
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Required: true,
+				MarkdownDescription: "Alert trigger. One of: `on_failure`, `on_n_consecutive`, `on_missed_heartbeat`, `on_recovery`, " +
+					"`on_slow_run`, `on_size_anomaly`.\n\n" +
+					"Agent monitors add four more, evaluated server-side against each run report: `on_empty_result` (the run " +
+					"produced nothing), `on_cost_exceeded` (a per-run or per-period spend ceiling was passed), `on_no_progress` " +
+					"(the step or tool-call ceiling was passed — a loop), and `on_unverified_run` (a success ping arrived with " +
+					"no report). `on_slow_run` is reused for an agent's duration ceiling.\n\n" +
+					"A missed agent run still fires `on_missed_heartbeat` — one transition, two vocabularies.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"on_failure",
@@ -80,6 +86,10 @@ func (r *AlertRuleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 						"on_recovery",
 						"on_slow_run",
 						"on_size_anomaly",
+						"on_empty_result",
+						"on_cost_exceeded",
+						"on_no_progress",
+						"on_unverified_run",
 					),
 				},
 			},
