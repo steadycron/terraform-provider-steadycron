@@ -166,6 +166,33 @@ func TestAgentModelToRequest_intervalSchedule(t *testing.T) {
 	}
 }
 
+func TestAgentModelToRequest_ignoresAnUnknownComputedCostPeriod(t *testing.T) {
+	// rule_cost_period is Computed, so during plan it arrives unknown whenever the server is the
+	// one that will fill it in. Sending "unknown" as a literal would be a 400.
+	m := baseAgentModel()
+	m.RuleCostPeriod = types.StringUnknown()
+	m.RuleMaxCostUsdPerPeriod = types.Float64Value(20)
+
+	req, _ := agentModelToRequest(context.Background(), m, false)
+
+	if req.RuleCostPeriod != nil {
+		t.Errorf("RuleCostPeriod = %q, want nil when unknown", *req.RuleCostPeriod)
+	}
+	if req.RuleMaxCostUsdPerPeriod == nil || *req.RuleMaxCostUsdPerPeriod != 20 {
+		t.Errorf("RuleMaxCostUsdPerPeriod = %v, want 20", req.RuleMaxCostUsdPerPeriod)
+	}
+}
+
+func TestValidateAgentCostRules_toleratesAnUnknownPeriod(t *testing.T) {
+	// Same reason: an unknown Computed value must not trip the "period without a ceiling" guard.
+	m := baseAgentModel()
+	m.RuleCostPeriod = types.StringUnknown()
+
+	if err := validateAgentCostRules(m); err != nil {
+		t.Errorf("unexpected error for an unknown cost period: %v", err)
+	}
+}
+
 func TestValidateAgentCostRules(t *testing.T) {
 	withPeriodOnly := baseAgentModel()
 	withPeriodOnly.RuleCostPeriod = types.StringValue("month")

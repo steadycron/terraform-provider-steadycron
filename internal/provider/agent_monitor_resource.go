@@ -219,8 +219,12 @@ func (r *AgentMonitorResource) Schema(_ context.Context, _ resource.SchemaReques
 				MarkdownDescription: "Alert when this monitor's summed spend across `rule_cost_period` exceeds this, in **USD**. Omit for no ceiling.",
 			},
 			"rule_cost_period": schema.StringAttribute{
-				Optional:            true,
-				MarkdownDescription: "The window `rule_max_cost_usd_per_period` sums over: `day` or `month`. Buckets are evaluated in the monitor's own `timezone`. Defaults to `month` when a per-period ceiling is set.",
+				Optional: true,
+				// Computed because the server fills this in: setting a per-period ceiling without
+				// a period stores `month`. Leaving it Optional-only made that a "Provider produced
+				// inconsistent result after apply" — config said null, the response said "month".
+				Computed:            true,
+				MarkdownDescription: "The window `rule_max_cost_usd_per_period` sums over: `day` or `month`. Buckets are evaluated in the monitor's own `timezone`. Defaults to `month` when a per-period ceiling is set, and is cleared with it.",
 				Validators: []validator.String{
 					stringvalidator.OneOf("day", "month"),
 				},

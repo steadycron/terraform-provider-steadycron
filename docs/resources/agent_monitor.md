@@ -181,7 +181,7 @@ When set, this exact string is used as the job key. When omitted, the server aut
 - `report_required` (Boolean) When `true` (the default), a success ping carrying no parseable run report is recorded as **unverified** rather than success, and can fire `on_unverified_run`. This is the point of the kind: a bare exit-0 is not proof of work. Set `false` only for an agent whose runtime cannot POST a body.
 
 **Forces replacement.** The API accepts this on create only — it is deliberately absent from the update surface.
-- `rule_cost_period` (String) The window `rule_max_cost_usd_per_period` sums over: `day` or `month`. Buckets are evaluated in the monitor's own `timezone`. Defaults to `month` when a per-period ceiling is set.
+- `rule_cost_period` (String) The window `rule_max_cost_usd_per_period` sums over: `day` or `month`. Buckets are evaluated in the monitor's own `timezone`. Defaults to `month` when a per-period ceiling is set, and is cleared with it.
 - `rule_empty_result_enabled` (Boolean) When `true` (the default), a run reporting zero items produced is a **failure**. This is the headline rule — the failure mode a plain cron monitor cannot catch. It does not pile onto an already-failed run, and it does not fire when neither `itemsProduced` nor `outputChars` was reported.
 
 **Forces replacement.** The API accepts this on create only.
